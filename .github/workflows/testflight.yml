@@ -18,4 +18,5 @@ jobs:
 
       - name: Build Swift Package / App
         run: |
-          xcodebuild -scheme DevJournal -destination 'generic/platform=iOS' build
+          swift build -v
+
