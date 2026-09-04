@@ -1,5 +1,4 @@
 // swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
@@ -10,17 +9,18 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .executable(
+        .library(
             name: "DevJournal",
             targets: ["DevJournal"]
         )
     ],
     dependencies: [],
     targets: [
-        .executableTarget(
+        .target(
             name: "DevJournal",
             dependencies: [],
             path: "DevJournal"
         )
     ]
 )
+
