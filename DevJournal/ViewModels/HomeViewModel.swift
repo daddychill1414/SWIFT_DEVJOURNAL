@@ -4,9 +4,9 @@
 //
 
 import SwiftUI
-import Observation
 
 @Observable
+
 final class HomeViewModel {
     var searchText: String = ""
     var isLoading: Bool = false

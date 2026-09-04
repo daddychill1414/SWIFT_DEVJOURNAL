@@ -4,10 +4,9 @@
 //
 
 import SwiftUI
-import Observation
-import SwiftData
 
 enum AppTab: Hashable {
+
     case home
     case projects
     case journal
