@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Logs — DevJournal</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .tag { display: inline-block; padding: 4px 10px; background: rgba(97, 89, 245, 0.15); color: var(--primary-indigo); border-radius: 12px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(15px); z-index: 100; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-card { width: 450px; background: #12121e; border: 1px solid var(--border-glass); border-radius: 24px; padding: 30px; }
+    </style>
+</head>
+<body>
+    <div class="glow-purple"></div>
+    <div class="glow-indigo"></div>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <a href="index.html" class="brand-logo">DevJournal</a>
+            <div class="sidebar-menu">
+                <a href="dashboard.html" class="sidebar-item"><span>🏠</span> Home</a>
+                <a href="journals.html" class="sidebar-item active"><span>📖</span> Journal Logs</a>
+                <a href="projects.html" class="sidebar-item"><span>📁</span> Projects</a>
+                <a href="insights.html" class="sidebar-item"><span>📊</span> Insights</a>
+                <a href="settings.html" class="sidebar-item"><span>⚙️</span> Settings</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h2 style="font-size: 32px; font-weight: 800;">Journal Logs</h2>
+                <button class="btn-gradient" onclick="openModal()">+ New Entry</button>
+            </div>
+
+            <div id="journalsContainer"></div>
+        </div>
+    </div>
+
+    <!-- New Entry Modal -->
+    <div class="modal" id="entryModal">
+        <div class="modal-card">
+            <h3 style="margin-bottom: 20px;">New Journal Entry</h3>
+            <form id="journalForm">
+                <input type="text" id="title" placeholder="Title" required style="width: 100%; padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-glass); border-radius: 12px; color: #fff; margin-bottom: 12px;">
+                <textarea id="content" placeholder="Journal content..." rows="4" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-glass); border-radius: 12px; color: #fff; margin-bottom: 12px;"></textarea>
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="btn-glass" onclick="closeModal()" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn-gradient" style="flex: 1;">Save Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function renderJournals() {
+            const container = document.getElementById('journalsContainer');
+            container.innerHTML = DevJournalStore.journals.map(j => `
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--accent-cyan); font-weight: 700; margin-bottom: 6px;">
+                        <span>${j.date}</span><span>${j.mood}</span>
+                    </div>
+                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">${j.title}</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 14px;">${j.content}</p>
+                    <div>${j.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
+                </div>
+            `).join('');
+        }
+
+        function openModal() { document.getElementById('entryModal').classList.add('active'); }
+        function closeModal() { document.getElementById('entryModal').classList.remove('active'); }
+
+        document.getElementById('journalForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            DevJournalStore.journals.unshift({ id: Date.now(), title, content, date: "Just now", mood: "😄", tags: ["dev", "swift"] });
+            DevJournalStore.saveJournals();
+            renderJournals();
+            closeModal();
+        });
+
+        renderJournals();
+    </script>
+</body>
+</html>

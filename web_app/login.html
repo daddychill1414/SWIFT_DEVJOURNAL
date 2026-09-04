@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — DevJournal</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .auth-card { max-width: 420px; margin: 80px auto; padding: 40px; background: var(--card-dark); backdrop-filter: blur(30px); border: 1px solid var(--border-glass); border-radius: 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; z-index: 10; }
+        .auth-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; text-align: center; }
+        .auth-sub { font-size: 13px; color: var(--text-secondary); text-align: center; margin-bottom: 28px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 12px; color: var(--text-secondary); font-weight: 700; margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 14px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-glass); border-radius: 16px; color: #fff; outline: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="glow-purple"></div>
+    <div class="glow-indigo"></div>
+
+    <nav class="navbar">
+        <a href="index.html" class="brand-logo">← DevJournal</a>
+    </nav>
+
+    <div class="auth-card">
+        <div class="auth-title">Welcome Back</div>
+        <div class="auth-sub">Sign in to your DevJournal account</div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>EMAIL ADDRESS</label>
+                <input type="email" class="form-control" placeholder="raniel@devjournal.app" required id="email">
+            </div>
+            <div class="form-group">
+                <label>PASSWORD</label>
+                <input type="password" class="form-control" placeholder="••••••••••••" required id="password">
+            </div>
+            <button type="submit" class="btn-gradient" style="width: 100%; margin-top: 10px;">Sign In</button>
+        </form>
+        <div style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-secondary);">
+            Don't have an account? <a href="register.html" style="color: var(--accent-cyan); font-weight: 700; text-decoration: underline;">Register</a>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            DevJournalStore.saveUser({ name: email.split('@')[0], email: email });
+            window.location.href = 'dashboard.html';
+        });
+    </script>
+</body>
+</html>
