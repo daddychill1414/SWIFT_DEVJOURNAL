@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevJournal — Pixel Perfect iOS Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0b14;
+            --card-glass: rgba(26, 26, 40, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-indigo: #6159f5;
+            --secondary-purple: #9e48fa;
+            --accent-cyan: #33c7f2;
+            --success-green: #33d97b;
+            --warning-orange: #ff9f2e;
+            --text-main: #ffffff;
+            --text-sub: #8e8e9f;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; }
+
+        body {
+            background-color: #040408;
+            color: var(--text-main);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .header-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-sub { text-align: center; color: var(--text-sub); font-size: 14px; margin-bottom: 40px; }
+
+        /* Grid of iPhones matching prompt image layout */
+        .screens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Single iPhone Device Frame */
+        .iphone-device {
+            width: 350px;
+            height: 740px;
+            background: var(--bg-dark);
+            border-radius: 48px;
+            border: 10px solid #1c1c28;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+
+        /* Top Notch / Dynamic Island */
+        .device-notch {
+            position: absolute;
+            top: 8px; left: 50%; transform: translateX(-50%);
+            width: 110px; height: 28px;
+            background: #000; border-radius: 20px;
+            z-index: 100;
+        }
+
+        /* Screen Body */
+        .screen-body {
+            flex: 1;
+            padding: 50px 18px 80px 18px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .screen-body::-webkit-scrollbar { display: none; }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--card-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        /* Floating Bottom Tab Bar */
+        .bottom-tabbar {
+            position: absolute;
+            bottom: 16px; left: 16px; right: 16px;
+            height: 58px;
+            background: rgba(18, 18, 28, 0.75);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--card-border);
+            border-radius: 30px;
+            display: flex; align-items: center; justify-content: space-around;
+        }
+        .tab-icon { font-size: 10px; color: var(--text-sub); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .tab-icon.active { color: var(--accent-cyan); font-weight: 700; }
+        .tab-plus {
+            position: relative; top: -10px; width: 46px; height: 46px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-indigo), var(--secondary-purple));
+            display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;
+            box-shadow: 0 6px 16px rgba(97, 89, 245, 0.5); border: 2px solid rgba(255,255,255,0.25);
+        }
+
+        /* Typography & Badges */
+        .sec-header { font-size: 13px; font-weight: 700; color: #d0d0e0; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .pill-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+        .pill-cyan { background: rgba(51, 199, 242, 0.15); color: var(--accent-cyan); }
+        .pill-green { background: rgba(51, 217, 123, 0.15); color: var(--success-green); }
+    </style>
+</head>
+<body>
+
+    <div class="header-title">DevJournal — Pixel-Perfect 9-Screen iOS Suite</div>
+    <div class="header-sub">Direct matching of your exact design mockup in native HTML, CSS, and SVG components</div>
+
+    <div class="screens-grid">
+
+        <!-- 1. HOME VIEW -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 12px; color: var(--text-sub);">Good evening,</div>
+                <div style="font-size: 24px; font-weight: 800; margin-bottom: 12px;">Raniel 👋</div>
+
+                <!-- Search -->
+                <div style="padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 20px; font-size: 12px; color: var(--text-sub); margin-bottom: 16px;">
+                    🔍 Search journal, projects...
+                </div>
+
+                <div class="sec-header"><span>Today's Progress</span></div>
+                <div class="glass-card" style="display: flex; gap: 14px; align-items: center;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(var(--accent-cyan) 75%, rgba(255,255,255,0.1) 0); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-dark); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;">75%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;">6h 15m</div>
+                        <div style="font-size: 11px; color: var(--text-sub);">Focused time • 12 Tasks done</div>
+                    </div>
+                </div>
+
+                <div class="sec-header"><span>Recent Activity</span><span style="color: var(--accent-cyan); font-size: 11px;">View all</span></div>
+                <div class="glass-card">
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 4px;">feat: add dashboard analytics</div>
+                    <div style="font-size: 10px; color: var(--text-sub);">Gameteract • 2h ago</div>
+                </div>
+                <div class="glass-card">
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 4px;">fix: authentication flow</div>
+                    <div style="font-size: 10px; color: var(--text-sub);">DevJournal iOS • 4h ago</div>
+                </div>
+            </div>
+            <div class="bottom-tabbar">
+                <div class="tab-icon active"><span>🏠</span>Home</div>
+                <div class="tab-icon"><span>📁</span>Projects</div>
+                <div class="tab-plus">+</div>
+                <div class="tab-icon"><span>📖</span>Journal</div>
+                <div class="tab-icon"><span>⚙️</span>More</div>
+            </div>
+        </div>
+
+        <!-- 2. FOCUS TIME TRACKER -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 16px;">DevJournal</div>
+                <div class="glass-card">
+                    <div style="font-size: 11px; color: var(--text-sub);">Focus Time</div>
+                    <div style="font-size: 32px; font-weight: 800; margin: 4px 0;">6h 15m</div>
+                    <div style="font-size: 10px; color: var(--success-green);">+18% vs yesterday</div>
+                </div>
+                <div class="glass-card">
+                    <div class="sec-header"><span>Top Languages</span></div>
+                    <div style="font-size: 11px; margin-bottom: 4px; display: flex; justify-content: space-between;"><span>TypeScript</span><span>48%</span></div>
+                    <div style="width: 100%; height: 4px; background: #3178c6; border-radius: 2px; margin-bottom: 8px;"></div>
+                    <div style="font-size: 11px; margin-bottom: 4px; display: flex; justify-content: space-between;"><span>Swift</span><span>20%</span></div>
+                    <div style="width: 100%; height: 4px; background: #f05138; border-radius: 2px;"></div>
+                </div>
+            </div>
+            <div class="bottom-tabbar">
+                <div class="tab-icon"><span>🏠</span>Home</div>
+                <div class="tab-icon"><span>📁</span>Projects</div>
+                <div class="tab-plus">+</div>
+                <div class="tab-icon"><span>📖</span>Journal</div>
+                <div class="tab-icon"><span>⚙️</span>More</div>
+            </div>
+        </div>
+
+        <!-- 3. NEW JOURNAL ENTRY EDITOR -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <span style="font-size: 12px; color: var(--text-sub);">‹</span>
+                    <span style="font-size: 14px; font-weight: 700;">Journal Entry</span>
+                    <span style="font-size: 12px; color: var(--accent-cyan); font-weight: 700;">Save</span>
+                </div>
+                <div class="glass-card">
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 4px;">What did you work on today?</div>
+                    <div style="font-size: 12px; line-height: 1.5; color: #fff;">Implemented the analytics dashboard with charts and activity summary. Integrated GitHub API to fetch real-time repository data.</div>
+                </div>
+                <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-sub);">Mood</div>
+                        <div style="font-size: 18px;">😄 Great</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: var(--text-sub);">Focus</div>
+                        <div style="font-size: 12px; font-weight: 700; color: var(--warning-orange);">High</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. PROJECTS LIST -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 22px; font-weight: 800; margin-bottom: 14px;">Projects</div>
+                <div class="glass-card">
+                    <div style="font-size: 14px; font-weight: 700;">DevJournal iOS</div>
+                    <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 8px;">Personal Project</div>
+                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;"><div style="width: 72%; height: 100%; background: var(--primary-indigo);"></div></div>
+                </div>
+                <div class="glass-card">
+                    <div style="font-size: 14px; font-weight: 700;">Gameteract Platform</div>
+                    <div style="font-size: 10px; color: var(--accent-cyan); margin-bottom: 8px;">Capstone Project</div>
+                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px;"><div style="width: 84%; height: 100%; background: var(--accent-cyan);"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. PROJECT DETAIL -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">Gameteract Platform</div>
+                <div style="font-size: 11px; color: var(--success-green); margin-bottom: 16px;">Capstone Project • Active</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                    <div class="glass-card" style="padding: 10px; text-align: center;"><div style="font-size: 18px; font-weight: 800;">127</div><div style="font-size: 9px; color: var(--text-sub);">Commits</div></div>
+                    <div class="glass-card" style="padding: 10px; text-align: center;"><div style="font-size: 18px; font-weight: 800;">18</div><div style="font-size: 9px; color: var(--text-sub);">Pull Requests</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. GITHUB ACTIVITY -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px;">GitHub Activity</div>
+                <div class="glass-card">
+                    <div style="font-size: 11px; font-weight: 700;">feat: add dashboard analytics</div>
+                    <div style="font-size: 9px; color: var(--text-sub);">2h ago</div>
+                </div>
+                <div class="glass-card">
+                    <div style="font-size: 11px; font-weight: 700;">fix: authentication redirect issue</div>
+                    <div style="font-size: 9px; color: var(--text-sub);">5h ago</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. INSIGHTS -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px;">Insights</div>
+                <div class="glass-card">
+                    <div style="font-size: 10px; color: var(--text-sub);">Productivity Score</div>
+                    <div style="font-size: 40px; font-weight: 800; color: var(--accent-cyan);">85</div>
+                </div>
+                <div class="glass-card" style="background: rgba(255, 159, 46, 0.1); border-color: rgba(255, 159, 46, 0.3);">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--warning-orange);">You're most productive in the morning.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. CALENDAR LOG -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px;">March 2026</div>
+                <div class="glass-card">
+                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 6px; font-size: 10px;">
+                        <span>1</span><span>2</span><span style="font-weight: 800; color: var(--accent-cyan);">3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. SETTINGS -->
+        <div class="iphone-device">
+            <div class="device-notch"></div>
+            <div class="screen-body">
+                <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px;">Settings</div>
+                <div class="glass-card">
+                    <div style="font-size: 14px; font-weight: 700;">Raniel Go</div>
+                    <div style="font-size: 10px; color: var(--text-sub);">iCloud & Supabase Sync Enabled</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
