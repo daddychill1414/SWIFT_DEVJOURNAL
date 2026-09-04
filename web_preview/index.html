@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevJournal — Complete Native iOS Web App Simulator</title>
+    <!-- Chart.js for Insights Tab -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #07070e;
+            --primary-indigo: #6159f5;
+            --secondary-purple: #9e48fa;
+            --accent-cyan: #33c7f2;
+            --success-green: #33d97b;
+            --warning-orange: #ff9f2e;
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: #030306;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Ambient Lighting */
+        .glow-purple {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(158, 72, 250, 0.22) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            right: 15%;
+            filter: blur(80px);
+            z-index: 1;
+        }
+
+        .glow-indigo {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(97, 89, 245, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: -100px;
+            left: 15%;
+            filter: blur(90px);
+            z-index: 1;
+        }
+
+        /* iPhone Frame Container */
+        .phone-frame {
+            position: relative;
+            width: 390px;
+            height: 830px;
+            background: var(--bg-dark);
+            border-radius: 54px;
+            border: 12px solid #1a1a24;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), 0 0 0 2px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Dynamic Island Notch */
+        .notch {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 32px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+        }
+        .notch-camera {
+            width: 12px;
+            height: 12px;
+            background: #111;
+            border-radius: 50%;
+            box-shadow: inset 0 0 3px rgba(255,255,255,0.2);
+        }
+
+        /* Screen Header & Navigation Container */
+        .screen-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .screen {
+            flex: 1;
+            overflow-y: auto;
+            padding: 60px 20px 100px 20px;
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        .screen::-webkit-scrollbar { display: none; }
+
+        /* Titles */
+        .header-title {
+            font-size: 30px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff, #d0d0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .header-subtitle {
+            font-size: 13px;
+            color: #8a8a9e;
+            margin-top: 2px;
+        }
+
+        /* Search input */
+        .search-box {
+            margin: 16px 0;
+            padding: 12px 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #8a8a9e;
+            font-size: 14px;
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            width: 100%;
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .glass-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Progress Ring */
+        .progress-ring-box {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .ring-svg {
+            transform: rotate(-90deg);
+            width: 90px;
+            height: 90px;
+        }
+        .ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 10; }
+        .ring-val {
+            fill: none;
+            stroke: url(#indigoCyanGrad);
+            stroke-width: 10;
+            stroke-dasharray: 264;
+            stroke-dashoffset: 66;
+            stroke-linecap: round;
+        }
+
+        /* Floating Glass Tab Bar */
+        .glass-tabbar {
+            position: absolute;
+            bottom: 24px;
+            left: 16px;
+            right: 16px;
+            height: 64px;
+            background: rgba(18, 18, 28, 0.7);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 6px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            z-index: 50;
+        }
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            color: #7a7a8e;
+            font-size: 10px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            flex: 1;
+        }
+        .tab-item.active { color: var(--accent-cyan); font-weight: 600; }
+
+        .plus-btn {
+            position: relative;
+            top: -14px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-indigo), var(--secondary-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(97, 89, 245, 0.6);
+            border: 2px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .plus-btn:active { transform: scale(0.92); }
+
+        /* Modal Overlay Sheet */
+        .sheet-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .sheet-overlay.active { display: flex; }
+        .sheet-content {
+            background: #12121e;
+            border-top-left-radius: 30px;
+            border-top-right-radius: 30px;
+            padding: 24px;
+            border-top: 1px solid var(--glass-border);
+            max-height: 85%;
+            overflow-y: auto;
+        }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; color: #8a8a9e; font-weight: 700; margin-bottom: 6px; }
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            color: #fff;
+            outline: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-indigo), var(--secondary-purple));
+            border: none;
+            border-radius: 16px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(97, 89, 245, 0.15);
+            color: var(--primary-indigo);
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-purple"></div>
+    <div class="glow-indigo"></div>
+
+    <div class="phone-frame">
+        <!-- Dynamic Island -->
+        <div class="notch"><div class="notch-camera"></div></div>
+
+        <!-- Screen Container -->
+        <div class="screen-container">
+            
+            <!-- 1. HOME SCREEN -->
+            <div class="screen active" id="screen-home">
+                <div class="header-subtitle">Good evening,</div>
+                <div class="header-title">Raniel Go 👋</div>
+                <div class="header-subtitle">Let's continue building something great today.</div>
+
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search journals, projects..." id="homeSearch" onkeyup="filterHome()">
+                </div>
+
+                <div style="font-size: 14px; font-weight: 700; margin: 16px 0 8px 0; color: #d0d0e0;">Today's Progress</div>
+                <div class="glass-card">
+                    <div class="progress-ring-box">
+                        <div style="position: relative; width: 90px; height: 90px;">
+                            <svg class="ring-svg">
+                                <defs>
+                                    <linearGradient id="indigoCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#6159f5" />
+                                        <stop offset="100%" stop-color="#33c7f2" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="ring-bg" cx="45" cy="45" r="38" />
+                                <circle class="ring-val" cx="45" cy="45" r="38" />
+                            </svg>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                <div style="font-size: 20px; font-weight: 800;" id="progressPercentText">75%</div>
+                                <div style="font-size: 9px; color: #8a8a9e;">DONE</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">⏱️ <span id="focusHoursText">6h 15m focused</span></div>
+                            <div style="font-size: 13px; font-weight: 600; color: var(--success-green);">✅ <span id="completedTasksText">12 tasks completed</span></div>
+                            <button onclick="openNewJournalSheet()" style="margin-top: 8px; padding: 6px 12px; background: var(--primary-indigo); border: none; border-radius: 12px; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer;">Log Session +</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; font-weight: 700; margin: 16px 0 8px 0; color: #d0d0e0;">Recent Activity</div>
+                <div id="homeActivityList"></div>
+            </div>
+
+            <!-- 2. PROJECTS SCREEN -->
+            <div class="screen" id="screen-projects">
+                <div class="header-title">Projects</div>
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search projects..." onkeyup="filterProjects(this.value)">
+                </div>
+                <div id="projectsList"></div>
+            </div>
+
+            <!-- 3. JOURNAL SCREEN -->
+            <div class="screen" id="screen-journal">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="header-title">Journal Logs</div>
+                    <button onclick="openNewJournalSheet()" style="background: var(--accent-cyan); border: none; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; cursor: pointer;">+</button>
+                </div>
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search entries..." onkeyup="filterJournals(this.value)">
+                </div>
+                <div id="journalEntriesList"></div>
+            </div>
+
+            <!-- 4. INSIGHTS SCREEN -->
+            <div class="screen" id="screen-insights">
+                <div class="header-title">Insights</div>
+                <div class="header-subtitle" style="margin-bottom: 16px;">Weekly Productivity & Focus Metrics</div>
+
+                <div class="glass-card">
+                    <div style="font-size: 12px; color: #8a8a9e;">Productivity Score</div>
+                    <div style="font-size: 42px; font-weight: 800; color: var(--accent-cyan);">85 <span style="font-size: 16px; color: #8a8a9e;">/ 100</span></div>
+                    <div style="font-size: 12px; color: var(--success-green); font-weight: 600;">Top 5% of active developers this week</div>
+                </div>
+
+                <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">Focus Time Trend</div>
+                <div class="glass-card">
+                    <canvas id="insightsChart" height="160"></canvas>
+                </div>
+            </div>
+
+            <!-- 5. SETTINGS SCREEN -->
+            <div class="screen" id="screen-settings">
+                <div class="header-title">Settings</div>
+                <div class="glass-card" style="margin-top: 16px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-indigo), var(--secondary-purple)); display: flex; align-items: center; justify-content: center; font-weight: bold;">RG</div>
+                        <div>
+                            <div style="font-weight: 700;">Raniel Go</div>
+                            <div style="font-size: 12px; color: #8a8a9e;">@ranielgo • iOS Developer</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div style="font-size: 12px; font-weight: 700; color: #8a8a9e; margin-bottom: 10px;">INTEGRATION & CLOUD</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span>GitHub Integration</span>
+                        <button onclick="toggleGitHubConnect()" id="githubBtn" style="padding: 4px 10px; background: rgba(51, 217, 123, 0.2); color: var(--success-green); border: none; border-radius: 12px; font-size: 11px; font-weight: 700; cursor: pointer;">Connected</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                        <span>Supabase Cloud Sync</span>
+                        <input type="checkbox" checked style="accent-color: var(--primary-indigo);">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Floating Glass Tab Bar -->
+        <div class="glass-tabbar">
+            <div class="tab-item active" onclick="switchTab('home')">
+                <span style="font-size: 18px;">🏠</span>
+                <span>Home</span>
+            </div>
+            <div class="tab-item" onclick="switchTab('projects')">
+                <span style="font-size: 18px;">📁</span>
+                <span>Projects</span>
+            </div>
+            <div class="plus-btn" onclick="openNewJournalSheet()">+</div>
+            <div class="tab-item" onclick="switchTab('journal')">
+                <span style="font-size: 18px;">📖</span>
+                <span>Journal</span>
+            </div>
+            <div class="tab-item" onclick="switchTab('insights')">
+                <span style="font-size: 18px;">📊</span>
+                <span>Insights</span>
+            </div>
+        </div>
+
+        <!-- NEW JOURNAL ENTRY MODAL SHEET -->
+        <div class="sheet-overlay" id="newJournalSheet">
+            <div class="sheet-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="font-size: 18px; font-weight: 700;">New Journal Log</div>
+                    <button onclick="closeNewJournalSheet()" style="background: transparent; border: none; color: #8a8a9e; font-size: 16px; cursor: pointer;">✕</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>TITLE</label>
+                    <input type="text" id="newTitle" class="form-input" placeholder="What did you work on today?">
+                </div>
+
+                <div class="form-group">
+                    <label>CONTENT</label>
+                    <textarea id="newContent" class="form-textarea" rows="3" placeholder="Log details, challenges, or solutions..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>MOOD</label>
+                    <select id="newMood" class="form-select">
+                        <option value="😄">😄 Great</option>
+                        <option value="🤩">🤩 Productive</option>
+                        <option value="🙂">🙂 Good</option>
+                        <option value="😐">😐 Neutral</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>TAGS (COMMA SEPARATED)</label>
+                    <input type="text" id="newTags" class="form-input" value="swift, github, visionos">
+                </div>
+
+                <button class="btn-primary" onclick="saveJournalEntry()">Save Journal</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Application Logic (Simulated SwiftData & Services) -->
+    <script>
+        // State Store (Simulating SwiftData / State)
+        const appState = {
+            journals: [
+                { id: 1, title: "Implemented GitHub synchronization", content: "Built native URLSession integration with async/await and Keychain token storage.", date: "Today", mood: "😄", hours: 5.5, tags: ["github", "swift", "development"] },
+                { id: 2, title: "Designed Glassmorphism UI System", content: "Created visionOS inspired ultraThinMaterial cards with soft stroke overlays.", date: "Yesterday", mood: "🤩", hours: 4.0, tags: ["swiftui", "design"] }
+            ],
+            projects: [
+                { name: "DevJournal iOS", desc: "Native iOS app with SwiftData, Supabase, and GitHub Integration", category: "Personal Project", progress: 72, commits: 142 },
+                { name: "Gameteract", desc: "Interactive Capstone project platform with real-time analytics", category: "Capstone Project", progress: 84, commits: 127 },
+                { name: "OneNetworx", desc: "OJT Enterprise Network Monitoring Solution", category: "OJT Project", progress: 100, commits: 89 }
+            ],
+            activities: [
+                { msg: "feat: add dashboard analytics", repo: "Gameteract", time: "2h ago", icon: "🔨" },
+                { msg: "fix: authentication redirect issue", repo: "DevJournal", time: "4h ago", icon: "🔀" },
+                { msg: "Update README.md with deployment steps", repo: "OneNetworx", time: "Yesterday", icon: "📝" }
+            ],
+            githubConnected: true
+        };
+
+        // Render Functions
+        function renderHomeActivities() {
+            const list = document.getElementById('homeActivityList');
+            list.innerHTML = appState.activities.map(act => `
+                <div class="glass-card" style="padding: 12px 16px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 18px;">${act.icon}</div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 600;">${act.msg}</div>
+                            <div style="font-size: 11px; color: #8a8a9e;"><span style="color: var(--accent-cyan); font-weight: 600;">${act.repo}</span> • ${act.time}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderProjects() {
+            const list = document.getElementById('projectsList');
+            list.innerHTML = appState.projects.map(proj => `
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <div style="font-weight: 700; font-size: 16px;">${proj.name}</div>
+                        <div style="font-size: 11px; color: var(--success-green); background: rgba(51,217,123,0.15); padding: 2px 8px; border-radius: 10px;">GitHub Connected</div>
+                    </div>
+                    <div style="font-size: 12px; color: #8a8a9e; margin-bottom: 12px;">${proj.desc}</div>
+                    <div style="font-size: 11px; color: #8a8a9e; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                        <span>Progress</span><span>${proj.progress}%</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div style="width: ${proj.progress}%; height: 100%; background: linear-gradient(90deg, var(--primary-indigo), var(--accent-cyan));"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderJournals() {
+            const list = document.getElementById('journalEntriesList');
+            list.innerHTML = appState.journals.map(entry => `
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--accent-cyan); font-weight: 700; margin-bottom: 4px;">
+                        <span>${entry.date}</span>
+                        <span>${entry.mood}</span>
+                    </div>
+                    <div style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">${entry.title}</div>
+                    <div style="font-size: 13px; color: #8a8a9e; margin-bottom: 10px;">${entry.content}</div>
+                    <div>${entry.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
+                </div>
+            `).join('');
+        }
+
+        // Navigation
+        function switchTab(tabName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(`screen-${tabName}`).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if (tabName === 'insights') renderChart();
+        }
+
+        // Modal Sheet Actions
+        function openNewJournalSheet() { document.getElementById('newJournalSheet').classList.add('active'); }
+        function closeNewJournalSheet() { document.getElementById('newJournalSheet').classList.remove('active'); }
+
+        function saveJournalEntry() {
+            const title = document.getElementById('newTitle').value;
+            const content = document.getElementById('newContent').value;
+            const mood = document.getElementById('newMood').value;
+            const tags = document.getElementById('newTags').value.split(',').map(t => t.trim());
+
+            if (!title) return alert('Please enter a title');
+
+            appState.journals.unshift({
+                id: Date.now(),
+                title, content: content || "Development update logged.",
+                date: "Just now", mood, hours: 2.0, tags
+            });
+
+            renderJournals();
+            closeNewJournalSheet();
+            switchTab('journal');
+        }
+
+        // Insights Chart
+        let chartInstance = null;
+        function renderChart() {
+            const ctx = document.getElementById('insightsChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Focus Hours',
+                        data: [4.5, 6.2, 5.8, 7.0, 6.25, 3.5, 2.0],
+                        backgroundColor: '#6159f5',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#8a8a9e' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8a8a9e' } }
+                    }
+                }
+            });
+        }
+
+        // Init
+        renderHomeActivities();
+        renderProjects();
+        renderJournals();
+    </script>
+</body>
+</html>
