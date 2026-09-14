@@ -132,7 +132,9 @@ struct NewJournalView: View {
                 }
             }
             .navigationTitle("New Journal Log")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {

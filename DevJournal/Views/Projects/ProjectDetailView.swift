@@ -108,7 +108,9 @@ struct ProjectDetailView: View {
             }
         }
         .navigationTitle(project.name)
+#if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+#endif
     }
     
     @ViewBuilder

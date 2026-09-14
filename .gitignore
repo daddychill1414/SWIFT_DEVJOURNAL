@@ -1,0 +1,10 @@
+# Xcode & SwiftPM
+.build/
+.swiftpm/
+DerivedData/
+*.dSYM
+*.xcworkspace
+*.xcuserdata
+*.png
+.DS_Store
+DS_Store

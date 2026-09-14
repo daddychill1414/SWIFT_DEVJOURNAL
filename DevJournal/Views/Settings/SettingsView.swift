@@ -171,6 +171,33 @@ struct SettingsView: View {
                             }
                             .padding(.horizontal, 20)
                         }
+                        
+                        // SIGN OUT BUTTON
+                        VStack(spacing: 12) {
+                            Button {
+                                withAnimation(.spring()) {
+                                    appState.isAuthenticated = false
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    Text("Sign Out")
+                                        .fontWeight(.bold)
+                                }
+                                .font(.headline)
+                                .foregroundColor(.red)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.red.opacity(0.12))
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
                     }
                     .padding(.bottom, 100)
                 }
@@ -206,7 +233,7 @@ struct GitHubConnectSheet: View {
                 }
                 
                 GlassButton(action: {
-                    KeychainService.shared.save(key: "github_access_token", string: "mock_github_oauth_token")
+                    _ = KeychainService.shared.save(key: "github_access_token", string: "mock_github_oauth_token")
                     GitHubAuthService.shared.isAuthenticated = true
                     dismiss()
                 }) {

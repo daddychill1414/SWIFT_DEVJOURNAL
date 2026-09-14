@@ -9,18 +9,18 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .library(
+        .executable(
             name: "DevJournal",
             targets: ["DevJournal"]
         )
     ],
     dependencies: [],
     targets: [
-        .target(
+        .executableTarget(
             name: "DevJournal",
             dependencies: [],
-            path: "DevJournal"
+            path: "DevJournal",
+            exclude: ["Info.plist"]
         )
     ]
 )
-

@@ -10,11 +10,30 @@ struct GlassTabBar: View {
     let onPlusTap: () -> Void
     
     var body: some View {
-        HStack(spacing: 0) {
-            tabButton(tab: .home, title: "Home", systemImage: "house.fill")
-            tabButton(tab: .projects, title: "Projects", systemImage: "folder.fill")
+        ZStack {
+            // Main Glass Capsule Bar Container
+            HStack(spacing: 0) {
+                tabButton(tab: .home, title: "Home", systemImage: "house.fill")
+                tabButton(tab: .projects, title: "Projects", systemImage: "folder.fill")
+                
+                // Clear placeholder space for the elevated center button
+                Color.clear
+                    .frame(width: 52, height: 44)
+                
+                tabButton(tab: .journal, title: "Journal", systemImage: "book.closed.fill")
+                tabButton(tab: .insights, title: "Insights", systemImage: "chart.xyaxis.line")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.25), radius: 16, x: 0, y: 8)
             
-            // Center Elevated Plus Button
+            // Center Elevated Floating Plus Button (Perfectly centered vertically)
             Button(action: onPlusTap) {
                 ZStack {
                     Circle()
@@ -25,33 +44,21 @@ struct GlassTabBar: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 52, height: 52)
-                        .shadow(color: AppColors.primaryIndigo.opacity(0.5), radius: 10, x: 0, y: 4)
+                        .frame(width: 48, height: 48)
+                        .shadow(color: AppColors.primaryIndigo.opacity(0.5), radius: 8, x: 0, y: 3)
                         .overlay(
                             Circle()
-                                .stroke(Color.white.opacity(0.3), lineWidth: 1.5)
+                                .stroke(Color.white.opacity(0.4), lineWidth: 1.5)
                         )
                     
                     Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                 }
             }
-            .offset(y: -14)
-            .padding(.horizontal, 8)
-            
-            tabButton(tab: .journal, title: "Journal", systemImage: "book.closed.fill")
-            tabButton(tab: .insights, title: "Insights", systemImage: "chart.xyaxis.line")
+            .buttonStyle(.plain)
+            .offset(y: -6)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.25), radius: 20, x: 0, y: 10)
         .padding(.horizontal, 20)
         .padding(.bottom, 8)
     }

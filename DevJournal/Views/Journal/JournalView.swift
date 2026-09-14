@@ -199,7 +199,9 @@ struct JournalEntryDetailView: View {
             }
         }
         .navigationTitle("Entry Details")
+#if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+#endif
     }
 }
 
