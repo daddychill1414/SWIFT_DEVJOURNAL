@@ -123,3 +123,35 @@ Refer to `SETUP_GUIDE.md` for detailed instructions on configuring:
 An interactive web simulator is available for testing without macOS:
 - Web App Simulator: `web_app/index.html`
 - Interactive Device Preview: `web_preview/index.html`
+
+---
+
+## Midterm Learning Reflection
+
+### 1. What I Learned While Developing the Application
+During the development of **DevJournal**, I gained hands-on experience in building a full-featured, architecture-driven native iOS application from the ground up using modern Swift 5.9+ and SwiftUI. Key takeaways include:
+- **Architectural Structuring (MVVM + Observable)**: Designing clean separation of concerns using `@Observable` state management, decoupled view models, and service layer abstractions.
+- **Data Persistence & Cloud Synchronization**: Integrating **SwiftData** for fast, offline-first local storage while linking asynchronous network pipelines to **Supabase** for backend cloud sync.
+- **REST APIs & Security**: Implementing GitHub OAuth 2.0 authentication flows, querying GitHub REST API endpoints for user activities, and securely storing sensitive user tokens using Apple's **Keychain Services**.
+
+### 2. Challenges Encountered
+- **State Synchronization between Local & Cloud Data**: Keeping SwiftData models seamlessly synchronized with remote Supabase tables without causing duplicate records or UI race conditions.
+- **Glassmorphism & Complex UI Performance**: Crafting custom visual effects (glass translucent card overlays and visionOS-style blur backdrops) while avoiding layout frame drops or expensive redrawing cycles on older iOS devices.
+- **Secure OAuth Token Lifecycle**: Handling OAuth token exchange, storage, and auto-refresh securely across app launches without blocking the main UI thread.
+
+### 3. How I Addressed Those Challenges
+- **Unified Service Layer**: Built dedicated service controllers (`GitHubAuthService`, `SupabaseService`, and `KeychainService`) to isolate side-effects and network handling outside the view hierarchy.
+- **Optimized View Rendering & Reusable Components**: Extracted glassmorphism styles into modular, lightweight SwiftUI views (`GlassCard`, `GlassTabBar`, `ProgressRing`), minimizing nested body calculations.
+- **Keychain Integration**: Wrapped iOS Security framework primitives in `KeychainService` using generic queries to ensure credentials remain encrypted in hardware enclave storage.
+
+### 4. SwiftUI Concepts & Development Skills Improved
+- **Modern State Management**: Replaced legacy `@ObservedObject` / `@Published` patterns with Swift 5.9’s macro-powered `@Observable` domain state model.
+- **Data Visualization**: Leveraged **Swift Charts** to construct interactive bar graphs, focus time analytics, and trend visualization with custom mark styling.
+- **Layout & Animations**: Mastered `GeometryReader`, custom canvas/ring gauges, layout stacks (`VStack`, `HStack`, `ZStack`), and smooth implicit animations (`.withAnimation`).
+
+### 5. Plans for Final Project Completion & Improvement
+- **Real-Time WebSockets Sync**: Implement Supabase Realtime subscriptions to update journal entries and activity feeds instantly across devices.
+- **Offline Sync Queue**: Build an offline mutation queue manager to defer database sync when network connection is lost.
+- **Background GitHub Polling**: Integrate `BGTaskScheduler` to fetch repository updates in the background and trigger periodic productivity summary notifications.
+- **Expanded Analytics & Export**: Add PDF / Markdown journal export options and deeper productivity metrics using custom Swift Charts extensions.
+
