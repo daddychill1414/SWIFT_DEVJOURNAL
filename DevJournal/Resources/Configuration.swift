@@ -9,13 +9,14 @@
 //  1. In Xcode, go to Product -> Scheme -> Edit Scheme... (Cmd + <)
 //  2. Select "Run" on the left sidebar and navigate to the "Arguments" tab.
 //  3. Under "Environment Variables", add:
-//     - SUPABASE_URL       : https://your-project.supabase.co
-//     - SUPABASE_ANON_KEY  : your-anon-key
-//     - GITHUB_CLIENT_ID   : your-github-client-id
+//     - SUPABASE_URL          : https://your-project.supabase.co
+//     - SUPABASE_ANON_KEY     : your-anon-key
+//     - GITHUB_CLIENT_ID      : your-github-client-id
+//     - GITHUB_CLIENT_SECRET  : your-github-client-secret
 //
 //  Option B (Info.plist Custom Keys):
 //  1. Open DevJournal Info.plist
-//  2. Add SUPABASE_URL, SUPABASE_ANON_KEY, and GITHUB_CLIENT_ID string values.
+//  2. Add SUPABASE_URL, SUPABASE_ANON_KEY, GITHUB_CLIENT_ID, and GITHUB_CLIENT_SECRET string values.
 //
 
 import Foundation
@@ -32,4 +33,9 @@ enum AppConfiguration {
     static var gitHubClientID: String {
         ProcessInfo.processInfo.environment["GITHUB_CLIENT_ID"] ?? "Iv23libz3SqaS3NGoQba"
     }
+    
+    static var gitHubClientSecret: String {
+        ProcessInfo.processInfo.environment["GITHUB_CLIENT_SECRET"] ?? ""
+    }
 }
+

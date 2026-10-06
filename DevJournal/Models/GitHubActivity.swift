@@ -21,7 +21,7 @@ final class GitHubActivityItem {
         repoName: String,
         timestamp: Date = Date(),
         type: String = "commit",
-        author: String = "ranielgo"
+        author: String = ""
     ) {
         self.id = id
         self.message = message

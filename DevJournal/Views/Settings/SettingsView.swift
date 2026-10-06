@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
@@ -38,13 +39,13 @@ struct SettingsView: View {
                                         .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
                                     
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(appState.currentUser?.name ?? "Raniel Go")
+                                        Text(appState.currentUser?.name ?? "Developer")
                                             .font(.headline)
                                             .foregroundColor(.primary)
-                                        Text("@\(appState.currentUser?.username ?? "ranielgo")")
+                                        Text("@\(appState.currentUser?.username ?? "user")")
                                             .font(.subheadline)
                                             .foregroundColor(.secondary)
-                                        Text(appState.currentUser?.bio ?? "iOS & Full Stack Developer")
+                                        Text(appState.currentUser?.bio ?? "iOS Developer")
                                             .font(.caption)
                                             .foregroundColor(AppColors.accentCyan)
                                     }
@@ -233,8 +234,12 @@ struct GitHubConnectSheet: View {
                 }
                 
                 GlassButton(action: {
-                    _ = KeychainService.shared.save(key: "github_access_token", string: "mock_github_oauth_token")
-                    GitHubAuthService.shared.isAuthenticated = true
+                    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                          let window = windowScene.windows.first else {
+                        return
+                    }
+                    let contextProvider = SettingsAuthContextProvider(anchorWindow: window)
+                    GitHubAuthService.shared.startOAuthFlow(appState: AppState(), presentationContext: contextProvider)
                     dismiss()
                 }) {
                     HStack {
@@ -254,6 +259,16 @@ struct GitHubConnectSheet: View {
             }
             .padding(30)
         }
+    }
+}
+
+private class SettingsAuthContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
+    let anchorWindow: UIWindow
+    init(anchorWindow: UIWindow) {
+        self.anchorWindow = anchorWindow
+    }
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        return anchorWindow
     }
 }
 

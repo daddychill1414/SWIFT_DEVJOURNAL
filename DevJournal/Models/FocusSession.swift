@@ -39,13 +39,4 @@ struct UserProfile: Codable, Identifiable {
     var avatarUrl: String?
     var bio: String?
     var gitHubUsername: String?
-    
-    static let sample = UserProfile(
-        id: "usr_12345",
-        name: "Raniel Go",
-        username: "ranielgo",
-        avatarUrl: "https://github.com/ranielgo.png",
-        bio: "Full Stack & iOS Developer building DevJournal",
-        gitHubUsername: "ranielgo"
-    )
 }

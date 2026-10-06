@@ -10,6 +10,7 @@ struct HomeView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var recentEntries: [JournalEntry]
+    @Query(sort: \FocusSession.startTime, order: .reverse) private var focusSessions: [FocusSession]
     
     @State private var viewModel = HomeViewModel()
     
@@ -27,7 +28,7 @@ struct HomeView: View {
                                 .foregroundColor(.secondary)
                             
                             HStack {
-                                Text("\(appState.currentUser?.name ?? "Raniel") 👋")
+                                Text("\(appState.currentUser?.name ?? "Developer") 👋")
                                     .font(.system(size: 32, weight: .bold, design: .rounded))
                                     .foregroundColor(.primary)
                                 Spacer()
@@ -181,6 +182,7 @@ struct HomeView: View {
             }
             .task {
                 await viewModel.fetchRecentActivities()
+                viewModel.computeTodayProgress(entries: recentEntries, sessions: focusSessions)
             }
         }
     }

@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Charts
 
 struct FocusTimeData: Identifiable {
@@ -13,15 +14,55 @@ struct FocusTimeData: Identifiable {
 }
 
 struct InsightsView: View {
-    let weeklyData: [FocusTimeData] = [
-        FocusTimeData(day: "Mon", hours: 4.5),
-        FocusTimeData(day: "Tue", hours: 6.2),
-        FocusTimeData(day: "Wed", hours: 5.8),
-        FocusTimeData(day: "Thu", hours: 7.0),
-        FocusTimeData(day: "Fri", hours: 6.25),
-        FocusTimeData(day: "Sat", hours: 3.5),
-        FocusTimeData(day: "Sun", hours: 2.0)
-    ]
+    @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
+    @Query(sort: \FocusSession.startTime, order: .reverse) private var focusSessions: [FocusSession]
+    
+    private var weeklyData: [FocusTimeData] {
+        let calendar = Calendar.current
+        let today = Date()
+        let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        
+        return (0..<7).reversed().map { daysAgo in
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else {
+                return FocusTimeData(day: "", hours: 0)
+            }
+            let weekday = calendar.component(.weekday, from: date) - 1
+            let dayName = dayNames[weekday]
+            
+            let dayEntries = journalEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
+            let dayFocus = focusSessions.filter { calendar.isDate($0.startTime, inSameDayAs: date) && $0.isCompleted }
+            
+            let totalHours = dayEntries.reduce(0.0) { $0 + $1.hoursSpent }
+                + Double(dayFocus.reduce(0) { $0 + $1.durationMinutes }) / 60.0
+            
+            return FocusTimeData(day: dayName, hours: totalHours)
+        }
+    }
+    
+    private var totalWeeklyHours: Double {
+        weeklyData.reduce(0.0) { $0 + $1.hours }
+    }
+    
+    private var dailyAvgHours: Double {
+        let activeDays = weeklyData.filter { $0.hours > 0 }.count
+        return activeDays > 0 ? totalWeeklyHours / Double(activeDays) : 0
+    }
+    
+    private var longestFocusMinutes: Int {
+        focusSessions.filter { $0.isCompleted }.map { $0.durationMinutes }.max() ?? 0
+    }
+    
+    private var productivityScore: Int {
+        let hoursScore = min(totalWeeklyHours / 35.0, 1.0) * 60
+        let consistencyScore = Double(weeklyData.filter { $0.hours > 0 }.count) / 7.0 * 40
+        return min(Int(hoursScore + consistencyScore), 100)
+    }
+    
+    private func formatDuration(_ totalMinutes: Int) -> String {
+        let h = totalMinutes / 60
+        let m = totalMinutes % 60
+        return "\(h)h \(m)m"
+    }
     
     var body: some View {
         NavigationStack {
@@ -51,7 +92,7 @@ struct InsightsView: View {
                                         .foregroundColor(.secondary)
                                     
                                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                        Text("85")
+                                        Text("\(productivityScore)")
                                             .font(.system(size: 48, weight: .bold, design: .rounded))
                                             .foregroundColor(AppColors.accentCyan)
                                         Text("/ 100")
@@ -59,9 +100,9 @@ struct InsightsView: View {
                                             .foregroundColor(.secondary)
                                     }
                                     
-                                    Text("Top 5% of active iOS developers this week.")
+                                    Text(productivityScore >= 80 ? "Outstanding productivity this week!" : productivityScore >= 50 ? "Good progress — keep building momentum." : "Log more sessions to boost your score.")
                                         .font(.caption)
-                                        .foregroundColor(AppColors.successGreen)
+                                        .foregroundColor(productivityScore >= 80 ? AppColors.successGreen : .secondary)
                                 }
                                 Spacer()
                                 
@@ -74,9 +115,9 @@ struct InsightsView: View {
                         
                         // Key Metrics Row
                         HStack(spacing: 12) {
-                            metricBox(title: "Longest Focus", value: "3h 20m", icon: "bolt.fill")
-                            metricBox(title: "Total Focus", value: "35h 15m", icon: "clock.fill")
-                            metricBox(title: "Daily Avg", value: "5h 02m", icon: "flame.fill")
+                            metricBox(title: "Longest Focus", value: formatDuration(longestFocusMinutes), icon: "bolt.fill")
+                            metricBox(title: "Total Focus", value: formatDuration(Int(totalWeeklyHours * 60)), icon: "clock.fill")
+                            metricBox(title: "Daily Avg", value: formatDuration(Int(dailyAvgHours * 60)), icon: "flame.fill")
                         }
                         .padding(.horizontal, 20)
                         
@@ -122,11 +163,11 @@ struct InsightsView: View {
                                         .fontWeight(.bold)
                                         .foregroundColor(AppColors.warningOrange)
                                     
-                                    Text("You're most productive in the morning.")
+                                    Text(totalWeeklyHours > 0 ? "You logged \(String(format: "%.1f", totalWeeklyHours)) hours this week." : "Start logging focus sessions to see insights.")
                                         .font(.headline)
                                         .foregroundColor(.primary)
                                     
-                                    Text("Your focus sessions are strongest between 9 AM and 12 PM.")
+                                    Text(totalWeeklyHours > 0 ? "Keep consistent daily sessions to maximize productivity." : "Add journal entries or complete focus sessions to track your progress.")
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
                                 }
@@ -163,3 +204,4 @@ struct InsightsView: View {
 #Preview {
     InsightsView()
 }
+
