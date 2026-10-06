@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
     @Environment(AppState.self) private var appState
@@ -165,7 +166,7 @@ struct LoginView: View {
                                         .font(.headline)
                                         .fontWeight(.bold)
                                 }
-                                .foregroundColor(Color(uiColor: .systemBackground))
+                                .foregroundColor(Color.black)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 15)
                                 .background(Color.primary)
@@ -173,18 +174,6 @@ struct LoginView: View {
                                 .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 4)
                             }
                             .padding(.horizontal, 20)
-                            
-                            Button {
-                                withAnimation(.spring()) {
-                                    appState.isAuthenticated = true
-                                }
-                            } label: {
-                                Text("Skip for Now")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(AppColors.primaryIndigo)
-                                    .padding(.vertical, 6)
-                            }
                         }
                         
                         Spacer(minLength: 24)
@@ -213,14 +202,24 @@ struct LoginView: View {
     }
     
     private func performGitHubAuth() {
-        isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            isLoading = false
-            appState.isGitHubConnected = true
-            withAnimation(.spring()) {
-                appState.isAuthenticated = true
-            }
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            errorMessage = "Unable to launch authentication window."
+            return
         }
+        
+        let contextProvider = WebAuthPresentationContextProvider(anchorWindow: rootViewController.view.window!)
+        GitHubAuthService.shared.startOAuthFlow(appState: appState, presentationContext: contextProvider)
+    }
+}
+
+private class WebAuthPresentationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
+    let anchorWindow: UIWindow
+    init(anchorWindow: UIWindow) {
+        self.anchorWindow = anchorWindow
+    }
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        return anchorWindow
     }
 }
 

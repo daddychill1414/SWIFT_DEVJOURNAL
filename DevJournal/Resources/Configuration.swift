@@ -22,14 +22,14 @@ import Foundation
 
 enum AppConfiguration {
     static var supabaseURL: String {
-        ProcessInfo.processInfo.environment["SUPABASE_URL"] ?? "https://your-project.supabase.co"
+        ProcessInfo.processInfo.environment["SUPABASE_URL"] ?? "https://lvspieinsvzpfniuflav.supabase.co"
     }
     
     static var supabaseAnonKey: String {
-        ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] ?? "YOUR_SUPABASE_ANON_KEY"
+        ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] ?? "sb_publishable_ukGx3euZGn2TS4AGkd5OYQ_FTtivk1c"
     }
     
     static var gitHubClientID: String {
-        ProcessInfo.processInfo.environment["GITHUB_CLIENT_ID"] ?? "YOUR_GITHUB_CLIENT_ID"
+        ProcessInfo.processInfo.environment["GITHUB_CLIENT_ID"] ?? "Iv23libz3SqaS3NGoQba"
     }
 }

@@ -181,35 +181,7 @@ struct HomeView: View {
             }
             .task {
                 await viewModel.fetchRecentActivities()
-                seedInitialDataIfNeeded()
             }
-        }
-    }
-    
-    private func seedInitialDataIfNeeded() {
-        if recentEntries.isEmpty {
-            let sample1 = JournalEntry(
-                title: "Implemented GitHub synchronization",
-                content: "Built native URLSession integration with async/await and Keychain token storage.",
-                date: Date(),
-                mood: "😄",
-                focusLevel: "High",
-                hoursSpent: 5.5,
-                tags: ["github", "swift", "development"],
-                gitHubRepoName: "DevJournal"
-            )
-            let sample2 = JournalEntry(
-                title: "Designed Glassmorphism UI Components",
-                content: "Created visionOS inspired ultraThinMaterial cards with soft stroke overlays.",
-                date: Date().addingTimeInterval(-86400),
-                mood: "🤩",
-                focusLevel: "High",
-                hoursSpent: 4.0,
-                tags: ["swiftui", "design"],
-                gitHubRepoName: "DevJournal"
-            )
-            modelContext.insert(sample1)
-            modelContext.insert(sample2)
         }
     }
 }

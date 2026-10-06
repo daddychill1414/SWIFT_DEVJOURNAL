@@ -168,21 +168,6 @@ struct ProjectsView: View {
                     .padding(.bottom, 100)
                 }
             }
-            .task {
-                seedInitialProjectsIfNeeded()
-            }
-        }
-    }
-    
-    private func seedInitialProjectsIfNeeded() {
-        if projects.isEmpty {
-            let proj1 = Project(name: "DevJournal iOS", projectDescription: "Native iOS app with SwiftData, Supabase, and GitHub Integration", category: "Personal Project", progress: 0.72, status: "Active", gitHubRepoName: "DevJournal", commitsCount: 142, prsCount: 22, issuesCount: 4, starsCount: 48)
-            let proj2 = Project(name: "Gameteract", projectDescription: "Interactive Capstone project platform with real-time analytics", category: "Capstone Project", progress: 0.84, status: "Active", gitHubRepoName: "Gameteract", commitsCount: 127, prsCount: 18, issuesCount: 7, starsCount: 24)
-            let proj3 = Project(name: "OneNetworx", projectDescription: "OJT Enterprise Network Monitoring Solution", category: "OJT Project", progress: 1.00, status: "Archived", gitHubRepoName: "OneNetworx", commitsCount: 89, prsCount: 12, issuesCount: 0, starsCount: 15)
-            
-            modelContext.insert(proj1)
-            modelContext.insert(proj2)
-            modelContext.insert(proj3)
         }
     }
 }

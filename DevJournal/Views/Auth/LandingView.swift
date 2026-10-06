@@ -189,18 +189,6 @@ struct LandingView: View {
                             .clipShape(Capsule())
                             .shadow(color: AppColors.primaryIndigo.opacity(0.4), radius: 12, x: 0, y: 6)
                         }
-                        
-                        Button {
-                            withAnimation(.spring()) {
-                                appState.isAuthenticated = true
-                            }
-                        } label: {
-                            Text("Explore as Guest")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.secondary)
-                                .padding(.vertical, 8)
-                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)

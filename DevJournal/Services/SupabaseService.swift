@@ -24,11 +24,11 @@ final class SupabaseService {
     private init() {}
     
     private var supabaseURL: String {
-        ProcessInfo.processInfo.environment["SUPABASE_URL"] ?? "https://your-project.supabase.co"
+        AppConfiguration.supabaseURL
     }
     
     private var supabaseAnonKey: String {
-        ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] ?? "YOUR_SUPABASE_ANON_KEY"
+        AppConfiguration.supabaseAnonKey
     }
     
     func syncJournalEntry(_ entry: JournalEntry) async throws {

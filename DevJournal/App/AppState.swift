@@ -38,7 +38,7 @@ final class AppState {
     // Auth & GitHub Status
     var isAuthenticated: Bool = false
     var isGitHubConnected: Bool = false
-    var currentUser: UserProfile? = UserProfile.sample
+    var currentUser: UserProfile? = nil
     
     var preferredColorScheme: ColorScheme? {
         switch themeMode {

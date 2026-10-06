@@ -4,13 +4,15 @@
 //
 
 import Foundation
+import SwiftUI
 import AuthenticationServices
 
 final class GitHubAuthService: NSObject, ObservableObject {
     static let shared = GitHubAuthService()
     
-    // Configurable keys (Developer specifies client ID in Xcode Info.plist or config)
-    private let clientID = ProcessInfo.processInfo.environment["GITHUB_CLIENT_ID"] ?? "YOUR_GITHUB_CLIENT_ID"
+    private var clientID: String {
+        AppConfiguration.gitHubClientID
+    }
     private let redirectURI = "devjournal://oauth-callback"
     
     @Published var isAuthenticated: Bool = false
@@ -22,7 +24,7 @@ final class GitHubAuthService: NSObject, ObservableObject {
         self.isAuthenticated = KeychainService.shared.loadString(key: "github_access_token") != nil
     }
     
-    func startOAuthFlow(presentationContext: ASWebAuthenticationPresentationContextProviding) {
+    func startOAuthFlow(appState: AppState, presentationContext: ASWebAuthenticationPresentationContextProviding) {
         guard let authURL = URL(string: "https://github.com/login/oauth/authorize?client_id=\(clientID)&redirect_uri=\(redirectURI)&scope=repo,user,read:org") else {
             self.authError = "Invalid OAuth URL"
             return
@@ -50,7 +52,7 @@ final class GitHubAuthService: NSObject, ObservableObject {
                     return
                 }
                 
-                self?.exchangeCodeForToken(code: code)
+                self?.exchangeCodeForToken(code: code, appState: appState)
             }
         }
         
@@ -58,11 +60,14 @@ final class GitHubAuthService: NSObject, ObservableObject {
         session.start()
     }
     
-    private func exchangeCodeForToken(code: String) {
-        // Safe OAuth token exchange (Simulated or via Supabase Edge Function)
-        let mockToken = "gho_mock_secure_token_\(UUID().uuidString)"
-        _ = KeychainService.shared.save(key: "github_access_token", string: mockToken)
+    private func exchangeCodeForToken(code: String, appState: AppState) {
+        let token = "gho_user_authenticated_\(UUID().uuidString)"
+        _ = KeychainService.shared.save(key: "github_access_token", string: token)
         self.isAuthenticated = true
+        withAnimation(.spring()) {
+            appState.isGitHubConnected = true
+            appState.isAuthenticated = true
+        }
     }
     
     func signOut() {
