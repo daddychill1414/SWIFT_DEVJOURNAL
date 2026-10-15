@@ -138,13 +138,20 @@ struct NewProjectView: View {
             progress: progress,
             status: "Active",
             gitHubRepoName: gitHubRepoName.isEmpty ? nil : gitHubRepoName,
-            commitsCount: Int.random(in: 10...150),
-            prsCount: Int.random(in: 2...20),
-            issuesCount: Int.random(in: 0...5),
-            starsCount: Int.random(in: 5...50)
+            commitsCount: 0,
+            prsCount: 0,
+            issuesCount: 0,
+            starsCount: 0,
+            isSyncedWithSupabase: false   // SyncEngine will handle push
         )
         
         modelContext.insert(newProject)
+        
+        // Kick off background sync (queues if offline)
+        Task {
+            await SyncEngine.shared.syncAll(using: modelContext)
+        }
+        
         dismiss()
     }
 }

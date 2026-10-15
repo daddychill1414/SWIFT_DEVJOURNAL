@@ -13,6 +13,13 @@ final class HomeViewModel {
     var gitHubActivities: [GitHubActivityItem] = []
     var errorMessage: String?
     
+    // Filtered activities based on selected repos
+    var selectedRepoNames: Set<String> = []
+    var filteredActivities: [GitHubActivityItem] {
+        guard !selectedRepoNames.isEmpty else { return gitHubActivities }
+        return gitHubActivities.filter { selectedRepoNames.contains($0.repoName) }
+    }
+    
     // Today's Progress — populated from SwiftData queries
     var progressPercent: Double = 0.0
     var focusHoursText: String = "0h 0m focused"

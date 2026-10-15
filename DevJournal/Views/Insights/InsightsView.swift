@@ -17,34 +17,54 @@ struct InsightsView: View {
     @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
     @Query(sort: \FocusSession.startTime, order: .reverse) private var focusSessions: [FocusSession]
     
-    private var weeklyData: [FocusTimeData] {
+    enum DateRange: String, CaseIterable {
+        case week = "Week"
+        case month = "Month"
+        case year = "Year"
+    }
+    
+    @State private var selectedRange: DateRange = .week
+    
+    private var filteredData: [FocusTimeData] {
         let calendar = Calendar.current
         let today = Date()
-        let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        let dayFormatter = DateFormatter()
         
-        return (0..<7).reversed().map { daysAgo in
-            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else {
-                return FocusTimeData(day: "", hours: 0)
+        if selectedRange == .year {
+            dayFormatter.dateFormat = "MMM"
+            return (0..<12).reversed().map { monthsAgo in
+                guard let monthDate = calendar.date(byAdding: .month, value: -monthsAgo, to: today),
+                      let interval = calendar.dateInterval(of: .month, for: monthDate) else {
+                    return FocusTimeData(day: "", hours: 0)
+                }
+                let monthEntries = journalEntries.filter { $0.date >= interval.start && $0.date < interval.end }
+                let monthFocus  = focusSessions.filter  { $0.startTime >= interval.start && $0.startTime < interval.end && $0.isCompleted }
+                let totalHours = monthEntries.reduce(0.0) { $0 + $1.hoursSpent }
+                    + Double(monthFocus.reduce(0) { $0 + $1.durationMinutes }) / 60.0
+                return FocusTimeData(day: dayFormatter.string(from: monthDate), hours: totalHours)
             }
-            let weekday = calendar.component(.weekday, from: date) - 1
-            let dayName = dayNames[weekday]
-            
-            let dayEntries = journalEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
-            let dayFocus = focusSessions.filter { calendar.isDate($0.startTime, inSameDayAs: date) && $0.isCompleted }
-            
-            let totalHours = dayEntries.reduce(0.0) { $0 + $1.hoursSpent }
-                + Double(dayFocus.reduce(0) { $0 + $1.durationMinutes }) / 60.0
-            
-            return FocusTimeData(day: dayName, hours: totalHours)
+        } else {
+            let daysBack = selectedRange == .week ? 7 : 30
+            dayFormatter.dateFormat = selectedRange == .week ? "EEE" : "d"
+            return (0..<daysBack).reversed().map { daysAgo in
+                guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else {
+                    return FocusTimeData(day: "", hours: 0)
+                }
+                let dayEntries = journalEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
+                let dayFocus   = focusSessions.filter  { calendar.isDate($0.startTime, inSameDayAs: date) && $0.isCompleted }
+                let totalHours = dayEntries.reduce(0.0) { $0 + $1.hoursSpent }
+                    + Double(dayFocus.reduce(0) { $0 + $1.durationMinutes }) / 60.0
+                return FocusTimeData(day: dayFormatter.string(from: date), hours: totalHours)
+            }
         }
     }
     
     private var totalWeeklyHours: Double {
-        weeklyData.reduce(0.0) { $0 + $1.hours }
+        filteredData.reduce(0.0) { $0 + $1.hours }
     }
     
     private var dailyAvgHours: Double {
-        let activeDays = weeklyData.filter { $0.hours > 0 }.count
+        let activeDays = filteredData.filter { $0.hours > 0 }.count
         return activeDays > 0 ? totalWeeklyHours / Double(activeDays) : 0
     }
     
@@ -54,7 +74,7 @@ struct InsightsView: View {
     
     private var productivityScore: Int {
         let hoursScore = min(totalWeeklyHours / 35.0, 1.0) * 60
-        let consistencyScore = Double(weeklyData.filter { $0.hours > 0 }.count) / 7.0 * 40
+        let consistencyScore = Double(filteredData.filter { $0.hours > 0 }.count) / Double(filteredData.count) * 40
         return min(Int(hoursScore + consistencyScore), 100)
     }
     
@@ -76,12 +96,21 @@ struct InsightsView: View {
                             Text("Insights")
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                                 .foregroundColor(.primary)
-                            Text("This Week")
+                            Text(selectedRange.rawValue)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
+                        
+                        // Date range picker
+                        Picker("Range", selection: $selectedRange) {
+                            ForEach(DateRange.allCases, id: \.self) { r in
+                                Text(r.rawValue).tag(r)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 20)
                         
                         // Productivity Score Card
                         GlassCard(style: .regular) {
@@ -128,7 +157,7 @@ struct InsightsView: View {
                                 .foregroundColor(.primary)
                             
                             GlassCard(style: .thin) {
-                                Chart(weeklyData) { data in
+                                Chart(filteredData) { data in
                                     BarMark(
                                         x: .value("Day", data.day),
                                         y: .value("Hours", data.hours)

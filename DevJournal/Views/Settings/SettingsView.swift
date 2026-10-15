@@ -5,10 +5,18 @@
 
 import SwiftUI
 import AuthenticationServices
+import SwiftData
 
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @StateObject private var gitHubAuth = GitHubAuthService.shared
+    @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
+    
+    @State private var reminderTime: Date = {
+        var comps = DateComponents()
+        comps.hour = 20; comps.minute = 0
+        return Calendar.current.date(from: comps) ?? Date()
+    }()
     
     var body: some View {
         NavigationStack {
@@ -88,10 +96,37 @@ struct SettingsView: View {
                                     
                                     Divider()
                                     
-                                    // Focus Reminders Toggle
+                                    // Focus Reminders Toggle + time picker
                                     Toggle(isOn: Bindable(appState).isFocusRemindersEnabled) {
                                         Label("Focus Reminders", systemImage: "timer")
                                             .foregroundColor(.primary)
+                                    }
+                                    .onChange(of: appState.isFocusRemindersEnabled) { _, enabled in
+                                        if enabled {
+                                            Task {
+                                                let granted = await NotificationService.shared.requestAuthorization()
+                                                if granted {
+                                                    let comps = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
+                                                    NotificationService.shared.scheduleFocusReminder(at: comps)
+                                                } else {
+                                                    appState.isFocusRemindersEnabled = false
+                                                }
+                                            }
+                                        } else {
+                                            NotificationService.shared.cancelReminders()
+                                        }
+                                    }
+                                    
+                                    if appState.isFocusRemindersEnabled {
+                                        DatePicker(
+                                            "Reminder Time",
+                                            selection: $reminderTime,
+                                            displayedComponents: .hourAndMinute
+                                        )
+                                        .onChange(of: reminderTime) { _, newTime in
+                                            let comps = Calendar.current.dateComponents([.hour, .minute], from: newTime)
+                                            NotificationService.shared.scheduleFocusReminder(at: comps)
+                                        }
                                     }
                                 }
                             }
@@ -136,10 +171,89 @@ struct SettingsView: View {
                                     
                                     Divider()
                                     
+                                    // Tracked Repositories Selector
+                                    NavigationLink {
+                                        RepoSelectorView()
+                                    } label: {
+                                        HStack {
+                                            Label("Tracked Repositories", systemImage: "folder.badge.gearshape")
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                            Text(appState.selectedRepoNames.isEmpty ? "All" : "\(appState.selectedRepoNames.count) active")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    
+                                    Divider()
+                                    
                                     // Supabase Sync Toggle
                                     Toggle(isOn: Bindable(appState).isSupabaseSyncEnabled) {
                                         Label("Supabase Cloud Sync", systemImage: "icloud.and.arrow.up.fill")
                                             .foregroundColor(.primary)
+                                    }
+                                    
+                                    // Sync status indicator
+                                    if SyncEngine.shared.isSyncing {
+                                        HStack(spacing: 8) {
+                                            ProgressView().scaleEffect(0.8)
+                                            Text("Syncing...")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    } else if let lastSync = SyncEngine.shared.lastSyncDate {
+                                        HStack(spacing: 6) {
+                                            Circle()
+                                                .fill(AppColors.successGreen)
+                                                .frame(width: 7, height: 7)
+                                            Text("Last synced \(lastSync.formatted(.relative(presentation: .named)))")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // EXPORT SECTION
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("EXPORT")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 24)
+                            
+                            GlassCard(style: .thin) {
+                                VStack(spacing: 14) {
+                                    Button {
+                                        ExportService.shareMarkdown(entries: journalEntries)
+                                    } label: {
+                                        HStack {
+                                            Label("Export as Markdown", systemImage: "doc.text")
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                            Text("\(journalEntries.count) entries")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    
+                                    Divider()
+                                    
+                                    Button {
+                                        ExportService.sharePDF(entries: journalEntries)
+                                    } label: {
+                                        HStack {
+                                            Label("Export as PDF", systemImage: "doc.richtext")
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                            Image(systemName: "arrow.up.doc")
+                                                .foregroundColor(AppColors.accentCyan)
+                                        }
                                     }
                                 }
                             }

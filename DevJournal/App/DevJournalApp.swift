@@ -26,11 +26,18 @@ struct DevJournalApp: App {
         }
     }()
 
+    init() {
+        BackgroundTaskService.shared.registerTasks()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(appState)
                 .preferredColorScheme(appState.preferredColorScheme)
+                .onAppear {
+                    BackgroundTaskService.shared.scheduleGitHubRefresh()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

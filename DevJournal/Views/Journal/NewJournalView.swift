@@ -16,11 +16,13 @@ struct NewJournalView: View {
     @State private var focusLevel: String = "High"
     @State private var hoursSpent: Double = 2.5
     @State private var tagsString: String = "swift, github"
-    @State private var selectedRepo: String = "DevJournal"
-    
+    @State private var selectedRepo: String = ""
+    @State private var repos: [GitHubRepository] = []
+    @State private var isLoadingRepos: Bool = false
+    @Environment(\.modelContext) private var modelContext
+
     let moods = ["😞", "😐", "🙂", "😄", "🤩"]
     let focusLevels = ["Low", "Medium", "High"]
-    let repos = ["DevJournal", "Gameteract", "OneNetworx"]
     
     var body: some View {
         NavigationStack {
@@ -127,6 +129,42 @@ struct NewJournalView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 16))
                                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.15), lineWidth: 1))
                         }
+                        
+                        // GitHub Repo Picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("GitHub Repository")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.secondary)
+                            
+                            if isLoadingRepos {
+                                HStack {
+                                    ProgressView()
+                                    Text("Loading repos...")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.vertical, 8)
+                            } else if repos.isEmpty {
+                                // Fallback free-text entry
+                                TextField("e.g. username/repo", text: $selectedRepo)
+                                    .padding()
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.15), lineWidth: 1))
+                            } else {
+                                Picker("Repository", selection: $selectedRepo) {
+                                    Text("None").tag("")
+                                    ForEach(repos, id: \.fullName) { repo in
+                                        Text(repo.name).tag(repo.fullName)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .padding()
+                                .background(.ultraThinMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                        }
                     }
                     .padding(20)
                 }
@@ -137,25 +175,29 @@ struct NewJournalView: View {
 #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.secondary)
+                    Button("Cancel") { dismiss() }.foregroundColor(.secondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save Journal") {
-                        saveJournal()
-                    }
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.accentCyan)
-                    .disabled(title.isEmpty)
+                    Button("Save Journal") { saveJournal() }
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.accentCyan)
+                        .disabled(title.isEmpty)
                 }
+            }
+            .task {
+                isLoadingRepos = true
+                repos = (try? await GitHubService.shared.fetchRepositories()) ?? []
+                isLoadingRepos = false
             }
         }
     }
     
     private func saveJournal() {
-        let tagArray = tagsString.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        let tagArray = tagsString
+            .components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        
         let newEntry = JournalEntry(
             title: title,
             content: content.isEmpty ? "Development updates logged." : content,
@@ -164,14 +206,15 @@ struct NewJournalView: View {
             focusLevel: focusLevel,
             hoursSpent: hoursSpent,
             tags: tagArray,
-            gitHubRepoName: selectedRepo
+            gitHubRepoName: selectedRepo.isEmpty ? nil : selectedRepo,
+            isSyncedWithSupabase: false   // SyncEngine will handle push
         )
         
         modelContext.insert(newEntry)
         
-        // Sync with Supabase asynchronously
+        // Kick off background sync (SyncEngine queues if offline)
         Task {
-            try? await SupabaseService.shared.syncJournalEntry(newEntry)
+            await SyncEngine.shared.syncAll(using: modelContext)
         }
         
         dismiss()

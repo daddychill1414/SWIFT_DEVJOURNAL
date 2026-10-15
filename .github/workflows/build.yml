@@ -1,0 +1,45 @@
+﻿name: DevJournal CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
+
+      - name: Show Xcode Version
+        run: xcodebuild -version
+
+      - name: Resolve Swift Packages
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project DevJournal.xcodeproj \
+            -scheme DevJournal
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project DevJournal.xcodeproj \
+            -scheme DevJournal \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run Tests
+        run: |
+          xcodebuild test \
+            -project DevJournal.xcodeproj \
+            -scheme DevJournal \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO

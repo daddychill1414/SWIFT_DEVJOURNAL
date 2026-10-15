@@ -39,6 +39,7 @@ final class AppState {
     var isAuthenticated: Bool = false
     var isGitHubConnected: Bool = false
     var currentUser: UserProfile? = nil
+    var selectedRepoNames: Set<String> = [] // empty = show all
     
     var preferredColorScheme: ColorScheme? {
         switch themeMode {
