@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 enum AppTab: Hashable {
 
@@ -46,6 +47,17 @@ final class AppState {
         case .system: return nil
         case .dark: return .dark
         case .light: return .light
+        }
+    }
+    
+    // MARK: - Model Context & Static Reference
+    static weak var current: AppState?
+    @ObservationIgnored var modelContext: ModelContext? = nil
+    
+    init() {
+        if let token = KeychainService.shared.loadString(key: "github_access_token"), !token.isEmpty {
+            self.isAuthenticated = true
+            self.isGitHubConnected = true
         }
     }
 }

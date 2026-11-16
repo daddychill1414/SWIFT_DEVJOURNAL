@@ -35,7 +35,7 @@ enum AppConfiguration {
     }
     
     static var gitHubClientSecret: String {
-        ProcessInfo.processInfo.environment["GITHUB_CLIENT_SECRET"] ?? ""
+        ProcessInfo.processInfo.environment["GITHUB_CLIENT_SECRET"] ?? "d58b1daccf7516ad46e6d253b662bc31aeb907d6"
     }
 }
 

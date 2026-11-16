@@ -32,12 +32,13 @@ final class HomeViewModel {
         self.gitHubService = gitHubService
     }
     
-    func fetchRecentActivities() async {
+    func fetchRecentActivities(username: String? = nil) async {
         isLoading = true
         errorMessage = nil
         do {
-            self.gitHubActivities = try await gitHubService.fetchUserActivity()
+            self.gitHubActivities = try await gitHubService.fetchUserActivity(username: username, page: 1)
         } catch {
+            print("HomeViewModel: Failed to fetch activities: \(error)")
             self.errorMessage = error.localizedDescription
         }
         isLoading = false

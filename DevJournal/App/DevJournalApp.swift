@@ -27,6 +27,7 @@ struct DevJournalApp: App {
     }()
 
     init() {
+        AppState.current = appState
         BackgroundTaskService.shared.registerTasks()
     }
 
@@ -37,6 +38,11 @@ struct DevJournalApp: App {
                 .preferredColorScheme(appState.preferredColorScheme)
                 .onAppear {
                     BackgroundTaskService.shared.scheduleGitHubRefresh()
+                }
+                .onOpenURL { url in
+                    if url.scheme == "devjournal" {
+                        GitHubAuthService.shared.handleCallbackURL(url, appState: appState)
+                    }
                 }
         }
         .modelContainer(sharedModelContainer)

@@ -93,15 +93,3 @@ final class SyncEngine {
         pendingCount = 0
     }
 }
-
-// MARK: - AppState convenience accessor for SyncEngine
-// AppState.current and AppState.modelContext are injected at app startup
-extension AppState {
-    /// Set by the App root on launch so SyncEngine can grab a model context
-    static weak var current: AppState?
-    var modelContext: ModelContext? {
-        get { _modelContext }
-        set { _modelContext = newValue }
-    }
-    @ObservationIgnored private(set) var _modelContext: ModelContext? = nil
-}

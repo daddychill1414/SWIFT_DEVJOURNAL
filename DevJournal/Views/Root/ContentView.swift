@@ -51,6 +51,16 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: appState.isAuthenticated)
+        .task {
+            if appState.isAuthenticated && appState.currentUser == nil {
+                if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                    withAnimation(.spring()) {
+                        appState.currentUser = profile
+                        appState.isGitHubConnected = true
+                    }
+                }
+            }
+        }
     }
 }
 

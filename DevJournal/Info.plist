@@ -36,5 +36,16 @@
     <array>
         <string>com.devjournal.app.githubRefresh</string>
     </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>devjournal</string>
+            </array>
+            <key>CFBundleURLName</key>
+            <string>com.devjournal.app</string>
+        </dict>
+    </array>
 </dict>
 </plist>

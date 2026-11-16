@@ -9,10 +9,25 @@ import SwiftData
 struct HomeView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
+    @StateObject private var gitHubAuth = GitHubAuthService.shared
     @Query(sort: \JournalEntry.date, order: .reverse) private var recentEntries: [JournalEntry]
     @Query(sort: \FocusSession.startTime, order: .reverse) private var focusSessions: [FocusSession]
     
     @State private var viewModel = HomeViewModel()
+    
+    private var displayedActivities: [GitHubActivityItem] {
+        let base = appState.selectedRepoNames.isEmpty
+            ? viewModel.gitHubActivities
+            : viewModel.gitHubActivities.filter { appState.selectedRepoNames.contains($0.repoName) }
+        if viewModel.searchText.isEmpty {
+            return base
+        } else {
+            return base.filter {
+                $0.message.localizedCaseInsensitiveContains(viewModel.searchText) ||
+                $0.repoName.localizedCaseInsensitiveContains(viewModel.searchText)
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -36,9 +51,27 @@ struct HomeView: View {
                                 Button {
                                     appState.selectedTab = .settings
                                 } label: {
-                                    Image(systemName: "person.crop.circle.fill")
-                                        .font(.system(size: 32))
-                                        .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                    if let avatarUrl = appState.currentUser?.avatarUrl,
+                                       let url = URL(string: avatarUrl) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: 34, height: 34)
+                                                    .clipShape(Circle())
+                                            default:
+                                                Image(systemName: "person.crop.circle.fill")
+                                                    .font(.system(size: 32))
+                                                    .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                            }
+                                        }
+                                    } else {
+                                        Image(systemName: "person.crop.circle.fill")
+                                            .font(.system(size: 32))
+                                            .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                    }
                                 }
                             }
                             
@@ -132,9 +165,109 @@ struct HomeView: View {
                             if viewModel.isLoading {
                                 ProgressView()
                                     .frame(maxWidth: .infinity, minHeight: 100)
+                            } else if displayedActivities.isEmpty {
+                                GlassCard(style: .ultraThin, padding: 18) {
+                                    VStack(spacing: 14) {
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .font(.title2)
+                                            .foregroundColor(.secondary)
+                                        Text(viewModel.errorMessage ?? (appState.isGitHubConnected ? "No recent GitHub activity found." : "Connect GitHub to view your commit and PR activity."))
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal, 8)
+                                        
+                                        if appState.currentUser == nil {
+                                            Button {
+                                                appState.isGitHubConnectSheetPresented = true
+                                            } label: {
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: "terminal.fill")
+                                                    Text("Connect GitHub Account")
+                                                }
+                                                .font(.headline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 22)
+                                                .padding(.vertical, 12)
+                                                .background(AppColors.primaryIndigo)
+                                                .clipShape(Capsule())
+                                                .shadow(color: AppColors.primaryIndigo.opacity(0.4), radius: 8, x: 0, y: 4)
+                                            }
+                                            .padding(.top, 4)
+                                        } else {
+                                            Button {
+                                                Task {
+                                                    await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
+                                                }
+                                            } label: {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: "arrow.clockwise")
+                                                    Text("Refresh Activity")
+                                                }
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(AppColors.accentCyan)
+                                            }
+                                            .padding(.top, 4)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                }
+                            } else if displayedActivities.isEmpty {
+                                GlassCard(style: .ultraThin, padding: 18) {
+                                    VStack(spacing: 14) {
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .font(.title2)
+                                            .foregroundColor(.secondary)
+                                        Text(viewModel.errorMessage ?? (appState.isGitHubConnected ? "No recent GitHub activity found." : "Connect GitHub to view your commit and PR activity."))
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                            .multilineTextAlignment(.center)
+                                            .padding(.horizontal, 8)
+                                        
+                                        if appState.currentUser == nil {
+                                            Button {
+                                                appState.isGitHubConnectSheetPresented = true
+                                            } label: {
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: "terminal.fill")
+                                                    Text("Connect GitHub Account")
+                                                }
+                                                .font(.headline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 22)
+                                                .padding(.vertical, 12)
+                                                .background(AppColors.primaryIndigo)
+                                                .clipShape(Capsule())
+                                                .shadow(color: AppColors.primaryIndigo.opacity(0.4), radius: 8, x: 0, y: 4)
+                                            }
+                                            .padding(.top, 4)
+                                        } else {
+                                            Button {
+                                                Task {
+                                                    await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
+                                                }
+                                            } label: {
+                                                HStack(spacing: 6) {
+                                                    Image(systemName: "arrow.clockwise")
+                                                    Text("Refresh Activity")
+                                                }
+                                                .font(.subheadline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(AppColors.accentCyan)
+                                            }
+                                            .padding(.top, 4)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                }
                             } else {
                                 VStack(spacing: 12) {
-                                    ForEach(viewModel.gitHubActivities) { activity in
+                                    ForEach(displayedActivities) { activity in
                                         GlassCard(style: .ultraThin, padding: 14) {
                                             HStack(spacing: 14) {
                                                 ZStack {
@@ -181,8 +314,86 @@ struct HomeView: View {
                 }
             }
             .task {
-                await viewModel.fetchRecentActivities()
+                if appState.currentUser == nil {
+                    if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                        withAnimation(.spring()) {
+                            appState.currentUser = profile
+                            appState.isGitHubConnected = true
+                        }
+                    }
+                }
+                await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
                 viewModel.computeTodayProgress(entries: recentEntries, sessions: focusSessions)
+            }
+            .refreshable {
+                if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                    withAnimation(.spring()) {
+                        appState.currentUser = profile
+                        appState.isGitHubConnected = true
+                    }
+                }
+                await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
+                viewModel.computeTodayProgress(entries: recentEntries, sessions: focusSessions)
+            }
+            .sheet(isPresented: Bindable(appState).isGitHubConnectSheetPresented) {
+                GitHubConnectSheet()
+            }
+            .onChange(of: gitHubAuth.isAuthenticated) { _, isAuthed in
+                if isAuthed {
+                    Task {
+                        if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                            await MainActor.run {
+                                withAnimation(.spring()) {
+                                    appState.currentUser = profile
+                                    appState.isGitHubConnected = true
+                                }
+                            }
+                        }
+                        await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
+                    }
+                }
+            }
+            .onChange(of: appState.currentUser?.username) { _, newUsername in
+                if let username = newUsername {
+                    Task {
+                        await viewModel.fetchRecentActivities(username: username)
+                    }
+                }
+            }
+            .refreshable {
+                if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                    withAnimation(.spring()) {
+                        appState.currentUser = profile
+                        appState.isGitHubConnected = true
+                    }
+                }
+                await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
+                viewModel.computeTodayProgress(entries: recentEntries, sessions: focusSessions)
+            }
+            .sheet(isPresented: Bindable(appState).isGitHubConnectSheetPresented) {
+                GitHubConnectSheet()
+            }
+            .onChange(of: gitHubAuth.isAuthenticated) { _, isAuthed in
+                if isAuthed {
+                    Task {
+                        if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                            await MainActor.run {
+                                withAnimation(.spring()) {
+                                    appState.currentUser = profile
+                                    appState.isGitHubConnected = true
+                                }
+                            }
+                        }
+                        await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
+                    }
+                }
+            }
+            .onChange(of: appState.currentUser?.username) { _, newUsername in
+                if let username = newUsername {
+                    Task {
+                        await viewModel.fetchRecentActivities(username: username)
+                    }
+                }
             }
         }
     }

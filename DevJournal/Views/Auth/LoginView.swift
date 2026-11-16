@@ -9,6 +9,7 @@ import AuthenticationServices
 struct LoginView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var gitHubAuth = GitHubAuthService.shared
     
     @State private var email = ""
     @State private var password = ""
@@ -39,7 +40,7 @@ struct LoginView: View {
                         // Glass Login Form Card
                         GlassCard(style: .regular) {
                             VStack(spacing: 20) {
-                                if let error = errorMessage {
+                                if let error = errorMessage ?? gitHubAuth.authError {
                                     HStack {
                                         Image(systemName: "exclamationmark.triangle.fill")
                                             .foregroundColor(.red)
@@ -202,24 +203,8 @@ struct LoginView: View {
     }
     
     private func performGitHubAuth() {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
-            errorMessage = "Unable to launch authentication window."
-            return
-        }
-        
-        let contextProvider = WebAuthPresentationContextProvider(anchorWindow: rootViewController.view.window!)
-        GitHubAuthService.shared.startOAuthFlow(appState: appState, presentationContext: contextProvider)
-    }
-}
-
-private class WebAuthPresentationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
-    let anchorWindow: UIWindow
-    init(anchorWindow: UIWindow) {
-        self.anchorWindow = anchorWindow
-    }
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return anchorWindow
+        errorMessage = nil
+        GitHubAuthService.shared.startOAuthFlow(appState: appState)
     }
 }
 

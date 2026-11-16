@@ -19,7 +19,6 @@ struct NewJournalView: View {
     @State private var selectedRepo: String = ""
     @State private var repos: [GitHubRepository] = []
     @State private var isLoadingRepos: Bool = false
-    @Environment(\.modelContext) private var modelContext
 
     let moods = ["😞", "😐", "🙂", "😄", "🤩"]
     let focusLevels = ["Low", "Medium", "High"]

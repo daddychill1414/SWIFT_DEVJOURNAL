@@ -42,9 +42,27 @@ struct SettingsView: View {
                             
                             GlassCard(style: .regular) {
                                 HStack(spacing: 16) {
-                                    Image(systemName: "person.crop.circle.fill")
-                                        .font(.system(size: 50))
-                                        .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                    if let avatarUrl = appState.currentUser?.avatarUrl,
+                                       let url = URL(string: avatarUrl) {
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fill)
+                                                    .frame(width: 50, height: 50)
+                                                    .clipShape(Circle())
+                                            default:
+                                                Image(systemName: "person.crop.circle.fill")
+                                                    .font(.system(size: 50))
+                                                    .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                            }
+                                        }
+                                    } else {
+                                        Image(systemName: "person.crop.circle.fill")
+                                            .font(.system(size: 50))
+                                            .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                    }
                                     
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(appState.currentUser?.name ?? "Developer")
@@ -151,6 +169,10 @@ struct SettingsView: View {
                                         if gitHubAuth.isAuthenticated {
                                             Button("Connected") {
                                                 gitHubAuth.signOut()
+                                                withAnimation(.spring()) {
+                                                    appState.currentUser = nil
+                                                    appState.isGitHubConnected = false
+                                                }
                                             }
                                             .font(.caption)
                                             .fontWeight(.bold)
@@ -290,8 +312,12 @@ struct SettingsView: View {
                         // SIGN OUT BUTTON
                         VStack(spacing: 12) {
                             Button {
+                                gitHubAuth.signOut()
                                 withAnimation(.spring()) {
+                                    appState.currentUser = nil
+                                    appState.isGitHubConnected = false
                                     appState.isAuthenticated = false
+                                    appState.selectedTab = .home
                                 }
                             } label: {
                                 HStack {
@@ -320,11 +346,22 @@ struct SettingsView: View {
             .sheet(isPresented: Bindable(appState).isGitHubConnectSheetPresented) {
                 GitHubConnectSheet()
             }
+            .task {
+                if gitHubAuth.isAuthenticated && appState.currentUser == nil {
+                    if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                        withAnimation(.spring()) {
+                            appState.currentUser = profile
+                            appState.isGitHubConnected = true
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 struct GitHubConnectSheet: View {
+    @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -348,12 +385,7 @@ struct GitHubConnectSheet: View {
                 }
                 
                 GlassButton(action: {
-                    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                          let window = windowScene.windows.first else {
-                        return
-                    }
-                    let contextProvider = SettingsAuthContextProvider(anchorWindow: window)
-                    GitHubAuthService.shared.startOAuthFlow(appState: AppState(), presentationContext: contextProvider)
+                    GitHubAuthService.shared.startOAuthFlow(appState: appState)
                     dismiss()
                 }) {
                     HStack {
@@ -373,16 +405,6 @@ struct GitHubConnectSheet: View {
             }
             .padding(30)
         }
-    }
-}
-
-private class SettingsAuthContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
-    let anchorWindow: UIWindow
-    init(anchorWindow: UIWindow) {
-        self.anchorWindow = anchorWindow
-    }
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        return anchorWindow
     }
 }
 
