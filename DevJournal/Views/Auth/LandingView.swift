@@ -172,26 +172,49 @@ struct LandingView: View {
                     }
                     
                     // Bottom Sticky Action Buttons
-                    VStack(spacing: 12) {
+                    VStack(spacing: 10) {
                         Button {
                             showingLoginScreen = true
                         } label: {
-                            HStack {
-                                Text("Get Started")
+                            HStack(spacing: 10) {
+                                Image(systemName: "terminal.fill")
+                                    .font(.headline)
+                                Text("Continue with GitHub")
                                     .font(.headline)
                                     .fontWeight(.bold)
                                 Image(systemName: "arrow.right")
+                                    .font(.subheadline.bold())
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(AppColors.primaryIndigo)
+                            .background(
+                                LinearGradient(
+                                    colors: [AppColors.primaryIndigo, AppColors.secondaryPurple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .clipShape(Capsule())
                             .shadow(color: AppColors.primaryIndigo.opacity(0.4), radius: 12, x: 0, y: 6)
                         }
+                        
+                        Button {
+                            showingLoginScreen = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Already have an account?")
+                                    .foregroundColor(.secondary)
+                                Text("Sign In")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(AppColors.accentCyan)
+                            }
+                            .font(.footnote)
+                            .padding(.vertical, 4)
+                        }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 14)
                     .background(.ultraThinMaterial)
                 }
             }
