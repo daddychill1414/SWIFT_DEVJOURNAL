@@ -47,22 +47,22 @@ Your personal access token was shared in chat. Revoke it immediately:
 ## 🎨 2. UI Polish
 
 ### Home Screen
-- [ ] Show a **skeleton loader** while activities are fetching (replace `ProgressView()` spinner)
-- [ ] Add **pull-to-refresh** animation feedback (haptic)
-- [ ] Show **repo filter chips** at the top of the activity list
+- [x] Show a **skeleton loader** while activities are fetching (replace `ProgressView()` spinner)
+- [x] Add **pull-to-refresh** animation feedback (haptic)
+- [x] Show **repo filter chips** at the top of the activity list
 - [ ] Display **commit count badge** on each repo card
-- [ ] Show **real avatar** in header (it loads async — add a placeholder shimmer)
-- [ ] Replace hardcoded `"Good evening,"` with dynamic time-based greeting (morning/afternoon/evening)
+- [x] Show **real avatar** in header (it loads async — placeholder shimmer)
+- [x] Replace hardcoded `"Good evening,"` with dynamic time-based greeting (morning/afternoon/evening)
 
 ### Landing & Login Screen
-- [ ] Remove the email/password fields entirely (the app only uses GitHub auth)
-- [ ] Make **"Continue with GitHub"** the only button — cleaner UX
-- [ ] Add a subtle loading indicator while OAuth is in progress
+- [x] Remove the email/password fields entirely (the app only uses GitHub auth)
+- [x] Make **"Continue with GitHub"** the only button — cleaner UX
+- [x] Add a subtle loading indicator while OAuth is in progress
 
 ### Settings Screen
-- [ ] Show **GitHub username**, **follower count**, **public repo count** after login
-- [ ] Add **"Refresh GitHub Data"** button
-- [ ] Show **last synced** timestamp
+- [x] Show **GitHub username**, **follower count**, **public repo count** after login
+- [x] Add **"Refresh GitHub Data"** button
+- [x] Show **last synced** timestamp
 
 ---
 
@@ -110,9 +110,9 @@ if http.statusCode == 401 {
 - [ ] Show **diff/patch** when tapping a commit
 
 ### Insights Tab
-- [ ] Show a **commits-per-day chart** (last 30 days) using Swift Charts
-- [ ] Show **most active repo** this week
-- [ ] Show **language breakdown** pie chart from repos
+- [x] Show a **commits-per-day chart** (last 30 days) using Swift Charts
+- [x] Show **most active repo** this week
+- [x] Show **language breakdown** pie chart from repos
 
 ### Notifications
 - [ ] Background refresh every 30 mins via `BGAppRefreshTask`
