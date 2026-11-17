@@ -67,6 +67,27 @@ final class GitHubService: GitHubServiceProtocol {
         return URLSession(configuration: config)
     }()
     
+    // MARK: - HTTP Response Validation
+    
+    private func validateHTTPResponse(_ response: URLResponse, path: String) async throws {
+        guard let http = response as? HTTPURLResponse else {
+            throw GitHubError.requestFailed(500)
+        }
+        
+        if http.statusCode == 401 {
+            print("GitHubService: 401 Unauthorized for \(path). Token may be expired or invalid. Auto signing out.")
+            await MainActor.run {
+                GitHubAuthService.shared.signOut()
+            }
+            throw GitHubError.unauthenticated
+        }
+        
+        guard (200...299).contains(http.statusCode) else {
+            print("GitHubService: Request to \(path) failed with status: \(http.statusCode)")
+            throw GitHubError.requestFailed(http.statusCode)
+        }
+    }
+    
     // MARK: - Generic Paginated Fetch
     
     private func fetchPaginated<T: Decodable>(
@@ -91,12 +112,7 @@ final class GitHubService: GitHubServiceProtocol {
         request.assumesHTTP3Capable = false
         
         let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 500
-            print("GitHubService: Request to \(path) failed with status: \(status)")
-            throw GitHubError.requestFailed(status)
-        }
+        try await validateHTTPResponse(response, path: path)
         
         let decoder = JSONDecoder()
         do {
@@ -125,11 +141,7 @@ final class GitHubService: GitHubServiceProtocol {
         request.assumesHTTP3Capable = false
         
         let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 500
-            print("GitHubService fetchUserProfile HTTP error: \(status)")
-            throw GitHubError.requestFailed(status)
-        }
+        try await validateHTTPResponse(response, path: "/user")
         
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let login = json["login"] as? String else {
@@ -191,7 +203,8 @@ final class GitHubService: GitHubServiceProtocol {
             targetUsername = profile.username
         }
         
-        guard let url = URL(string: "\(baseURL)/users/\(targetUsername)/events?per_page=30&page=\(page)") else {
+        let path = "/users/\(targetUsername)/events?per_page=30&page=\(page)"
+        guard let url = URL(string: "\(baseURL)\(path)") else {
             throw GitHubError.invalidURL
         }
         
@@ -203,12 +216,7 @@ final class GitHubService: GitHubServiceProtocol {
         request.assumesHTTP3Capable = false
         
         let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 500
-            print("GitHubService fetchUserActivity HTTP error: \(status)")
-            throw GitHubError.requestFailed(status)
-        }
+        try await validateHTTPResponse(response, path: path)
         
         guard let jsonArray = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
