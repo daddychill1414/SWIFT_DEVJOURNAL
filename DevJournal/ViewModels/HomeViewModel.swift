@@ -5,8 +5,8 @@
 
 import SwiftUI
 
+@MainActor
 @Observable
-
 final class HomeViewModel {
     var searchText: String = ""
     var isLoading: Bool = false
@@ -15,9 +15,70 @@ final class HomeViewModel {
     
     // Filtered activities based on selected repos
     var selectedRepoNames: Set<String> = []
+    var selectedRepoFilter: String? = nil
+    
+    var availableRepos: [String] {
+        var seen = Set<String>()
+        var repos: [String] = []
+        for activity in gitHubActivities {
+            if !seen.contains(activity.repoName) {
+                seen.insert(activity.repoName)
+                repos.append(activity.repoName)
+            }
+        }
+        return repos
+    }
+    
+    func toggleRepoFilter(_ repo: String?) {
+        if selectedRepoFilter == repo {
+            selectedRepoFilter = nil
+        } else {
+            selectedRepoFilter = repo
+        }
+    }
+    
+    func filteredActivities(globalSelectedRepos: Set<String> = []) -> [GitHubActivityItem] {
+        var items = gitHubActivities
+        
+        // 1. Repo filter chip priority (single tap selection)
+        if let filter = selectedRepoFilter {
+            items = items.filter { $0.repoName == filter }
+        } else if !globalSelectedRepos.isEmpty {
+            items = items.filter { globalSelectedRepos.contains($0.repoName) }
+        } else if !selectedRepoNames.isEmpty {
+            items = items.filter { selectedRepoNames.contains($0.repoName) }
+        }
+        
+        // 2. Search filter
+        if !searchText.isEmpty {
+            items = items.filter {
+                $0.message.localizedCaseInsensitiveContains(searchText) ||
+                $0.repoName.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        
+        return items
+    }
+    
     var filteredActivities: [GitHubActivityItem] {
-        guard !selectedRepoNames.isEmpty else { return gitHubActivities }
-        return gitHubActivities.filter { selectedRepoNames.contains($0.repoName) }
+        filteredActivities(globalSelectedRepos: selectedRepoNames)
+    }
+    
+    // Dynamic Greeting based on time of day
+    func greeting(for date: Date = Date()) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+        switch hour {
+        case 5..<12:
+            return "Good morning,"
+        case 12..<17:
+            return "Good afternoon,"
+        default:
+            return "Good evening,"
+        }
+    }
+    
+    var currentGreeting: String {
+        greeting(for: Date())
     }
     
     // Today's Progress — populated from SwiftData queries
