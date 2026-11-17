@@ -186,24 +186,13 @@ struct LoginView: View {
     }
     
     private func performLogin() {
-        guard !email.isEmpty, !password.isEmpty else {
-            errorMessage = "Please fill in all fields."
-            return
-        }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            isLoading = false
-            withAnimation(.spring()) {
-                appState.isAuthenticated = true
-            }
-        }
+        // Route through GitHub OAuth — the app requires GitHub authentication
+        performGitHubAuth()
     }
     
     private func performGitHubAuth() {
         errorMessage = nil
+        gitHubAuth.authError = nil
         GitHubAuthService.shared.startOAuthFlow(appState: appState)
     }
 }
