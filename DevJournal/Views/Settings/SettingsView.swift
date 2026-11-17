@@ -9,8 +9,21 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var gitHubAuth = GitHubAuthService.shared
     @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
+    
+    // GitHub Authenticated User Metrics
+    @State private var followersCount: Int? = nil
+    @State private var publicReposCount: Int? = nil
+    @State private var followingCount: Int? = nil
+    @State private var isRefreshingGitHub: Bool = false
+    @State private var refreshError: String? = nil
+    @AppStorage("github_last_synced_timestamp") private var lastSyncedTimestamp: Double = 0
+    
+    private var lastSyncedDate: Date? {
+        lastSyncedTimestamp > 0 ? Date(timeIntervalSince1970: lastSyncedTimestamp) : nil
+    }
     
     @State private var reminderTime: Date = {
         var comps = DateComponents()
@@ -41,41 +54,80 @@ struct SettingsView: View {
                                 .padding(.horizontal, 24)
                             
                             GlassCard(style: .regular) {
-                                HStack(spacing: 16) {
-                                    if let avatarUrl = appState.currentUser?.avatarUrl,
-                                       let url = URL(string: avatarUrl) {
-                                        AsyncImage(url: url) { phase in
-                                            switch phase {
-                                            case .success(let image):
-                                                image
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fill)
-                                                    .frame(width: 50, height: 50)
-                                                    .clipShape(Circle())
-                                            default:
-                                                Image(systemName: "person.crop.circle.fill")
-                                                    .font(.system(size: 50))
-                                                    .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                VStack(spacing: 16) {
+                                    HStack(spacing: 16) {
+                                        if let avatarUrl = appState.currentUser?.avatarUrl,
+                                           let url = URL(string: avatarUrl) {
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .success(let image):
+                                                    image
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                        .frame(width: 54, height: 54)
+                                                        .clipShape(Circle())
+                                                        .overlay(Circle().stroke(AppColors.primaryIndigo.opacity(0.4), lineWidth: 2))
+                                                default:
+                                                    Image(systemName: "person.crop.circle.fill")
+                                                        .font(.system(size: 54))
+                                                        .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                                }
                                             }
+                                        } else {
+                                            Image(systemName: "person.crop.circle.fill")
+                                                .font(.system(size: 54))
+                                                .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
                                         }
-                                    } else {
-                                        Image(systemName: "person.crop.circle.fill")
-                                            .font(.system(size: 50))
-                                            .foregroundStyle(AppColors.primaryIndigo, AppColors.secondaryPurple)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack(spacing: 6) {
+                                                Text(appState.currentUser?.name ?? "Developer")
+                                                    .font(.headline)
+                                                    .foregroundColor(.primary)
+                                                if gitHubAuth.isAuthenticated {
+                                                    Image(systemName: "checkmark.seal.fill")
+                                                        .font(.caption)
+                                                        .foregroundColor(AppColors.accentCyan)
+                                                }
+                                            }
+                                            Text("@\(appState.currentUser?.username ?? "user")")
+                                                .font(.subheadline)
+                                                .foregroundColor(.secondary)
+                                            Text(appState.currentUser?.bio ?? "iOS Developer")
+                                                .font(.caption)
+                                                .foregroundColor(AppColors.accentCyan)
+                                                .lineLimit(2)
+                                        }
+                                        Spacer()
                                     }
                                     
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(appState.currentUser?.name ?? "Developer")
-                                            .font(.headline)
-                                            .foregroundColor(.primary)
-                                        Text("@\(appState.currentUser?.username ?? "user")")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                        Text(appState.currentUser?.bio ?? "iOS Developer")
-                                            .font(.caption)
-                                            .foregroundColor(AppColors.accentCyan)
+                                    // GitHub User Metrics
+                                    if gitHubAuth.isAuthenticated {
+                                        Divider()
+                                        
+                                        HStack(spacing: 10) {
+                                            userMetricItem(
+                                                title: "Username",
+                                                value: appState.currentUser?.username.map { "@\($0)" } ?? "@user",
+                                                icon: "at",
+                                                color: AppColors.accentCyan
+                                            )
+                                            
+                                            userMetricItem(
+                                                title: "Followers",
+                                                value: followersCount.map { "\($0)" } ?? "—",
+                                                icon: "person.2.fill",
+                                                color: AppColors.secondaryPurple
+                                            )
+                                            
+                                            userMetricItem(
+                                                title: "Public Repos",
+                                                value: publicReposCount.map { "\($0)" } ?? "—",
+                                                icon: "folder.fill",
+                                                color: AppColors.primaryIndigo
+                                            )
+                                        }
                                     }
-                                    Spacer()
                                 }
                             }
                             .padding(.horizontal, 20)
@@ -191,6 +243,72 @@ struct SettingsView: View {
                                         }
                                     }
                                     
+                                    if gitHubAuth.isAuthenticated {
+                                        Divider()
+                                        
+                                        // Refresh GitHub Data button
+                                        Button {
+                                            Task {
+                                                await refreshGitHubData()
+                                            }
+                                        } label: {
+                                            HStack {
+                                                Label {
+                                                    Text(isRefreshingGitHub ? "Syncing GitHub Data..." : "Refresh GitHub Data")
+                                                        .foregroundColor(.primary)
+                                                } icon: {
+                                                    if isRefreshingGitHub {
+                                                        ProgressView()
+                                                            .scaleEffect(0.8)
+                                                    } else {
+                                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                                            .foregroundColor(AppColors.accentCyan)
+                                                    }
+                                                }
+                                                Spacer()
+                                                if !isRefreshingGitHub {
+                                                    Image(systemName: "chevron.right")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                        }
+                                        .disabled(isRefreshingGitHub)
+                                        
+                                        Divider()
+                                        
+                                        // Last synced timestamp
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(isRefreshingGitHub ? AppColors.warningOrange : AppColors.successGreen)
+                                                .frame(width: 7, height: 7)
+                                            
+                                            if isRefreshingGitHub {
+                                                Text("Syncing repositories & events...")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            } else if let lastSync = lastSyncedDate {
+                                                Text("Last synced \(lastSync.formatted(.relative(presentation: .named)))")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                                Spacer()
+                                                Text(lastSync.formatted(date: .omitted, time: .shortened))
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary.opacity(0.8))
+                                            } else {
+                                                Text("Last synced: Never")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        
+                                        if let error = refreshError {
+                                            Text("Sync error: \(error)")
+                                                .font(.caption2)
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+                                    
                                     Divider()
                                     
                                     // Tracked Repositories Selector
@@ -218,11 +336,11 @@ struct SettingsView: View {
                                             .foregroundColor(.primary)
                                     }
                                     
-                                    // Sync status indicator
+                                    // Supabase Sync status indicator
                                     if SyncEngine.shared.isSyncing {
                                         HStack(spacing: 8) {
                                             ProgressView().scaleEffect(0.8)
-                                            Text("Syncing...")
+                                            Text("Syncing with Supabase...")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                         }
@@ -231,7 +349,7 @@ struct SettingsView: View {
                                             Circle()
                                                 .fill(AppColors.successGreen)
                                                 .frame(width: 7, height: 7)
-                                            Text("Last synced \(lastSync.formatted(.relative(presentation: .named)))")
+                                            Text("Cloud synced \(lastSync.formatted(.relative(presentation: .named)))")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                         }
@@ -334,7 +452,7 @@ struct SettingsView: View {
                                 .overlay(
                                     Capsule()
                                         .stroke(Color.red.opacity(0.2), lineWidth: 1)
-                                )
+                                 )
                             }
                         }
                         .padding(.horizontal, 20)
@@ -347,15 +465,136 @@ struct SettingsView: View {
                 GitHubConnectSheet()
             }
             .task {
-                if gitHubAuth.isAuthenticated && appState.currentUser == nil {
-                    if let profile = try? await GitHubService.shared.fetchUserProfile() {
-                        withAnimation(.spring()) {
-                            appState.currentUser = profile
-                            appState.isGitHubConnected = true
+                if gitHubAuth.isAuthenticated {
+                    if appState.currentUser == nil {
+                        if let profile = try? await GitHubService.shared.fetchUserProfile() {
+                            withAnimation(.spring()) {
+                                appState.currentUser = profile
+                                appState.isGitHubConnected = true
+                            }
                         }
+                    }
+                    await fetchGitHubUserMetrics()
+                    if lastSyncedTimestamp == 0 {
+                        lastSyncedTimestamp = Date().timeIntervalSince1970
                     }
                 }
             }
+            .refreshable {
+                if gitHubAuth.isAuthenticated {
+                    await refreshGitHubData()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func userMetricItem(title: String, value: String, icon: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .foregroundColor(color)
+                Text(value)
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            Text(title)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 6)
+        .background(Color.white.opacity(0.04))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+    
+    // MARK: - Data Fetching & Sync
+    
+    private func fetchGitHubUserMetrics() async {
+        guard let token = KeychainService.shared.loadString(key: "github_access_token"), !token.isEmpty else {
+            return
+        }
+        guard let url = URL(string: "https://api.github.com/user") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+        request.setValue("DevJournal/1.0", forHTTPHeaderField: "User-Agent")
+        request.assumesHTTP3Capable = false
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                await MainActor.run {
+                    self.followersCount = json["followers"] as? Int
+                    self.publicReposCount = json["public_repos"] as? Int
+                    self.followingCount = json["following"] as? Int
+                }
+            }
+        } catch {
+            print("SettingsView: Failed to fetch user metrics: \(error)")
+        }
+        
+        // Fallback for publicReposCount if not returned
+        if self.publicReposCount == nil, let repos = try? await GitHubService.shared.fetchRepositories() {
+            await MainActor.run {
+                self.publicReposCount = repos.filter { !$0.isPrivate }.count
+            }
+        }
+    }
+    
+    @MainActor
+    private func refreshGitHubData() async {
+        guard !isRefreshingGitHub else { return }
+        isRefreshingGitHub = true
+        refreshError = nil
+        
+        defer {
+            isRefreshingGitHub = false
+        }
+        
+        do {
+            // 1. Fetch updated profile
+            let profile = try await GitHubService.shared.fetchUserProfile()
+            withAnimation(.spring()) {
+                appState.currentUser = profile
+                appState.isGitHubConnected = true
+            }
+            
+            // 2. Fetch authenticated metrics (followers, public repos)
+            await fetchGitHubUserMetrics()
+            
+            // 3. Fetch repositories
+            _ = try? await GitHubService.shared.fetchRepositories()
+            
+            // 4. Trigger Supabase sync if enabled
+            if appState.isSupabaseSyncEnabled {
+                await SyncEngine.shared.syncAll(using: modelContext)
+            }
+            
+            // 5. Update timestamp
+            lastSyncedTimestamp = Date().timeIntervalSince1970
+            
+            #if canImport(UIKit)
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+            #endif
+        } catch {
+            refreshError = error.localizedDescription
+            #if canImport(UIKit)
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+            #endif
         }
     }
 }
