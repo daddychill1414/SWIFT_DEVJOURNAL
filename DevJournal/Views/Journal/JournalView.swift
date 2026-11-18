@@ -13,11 +13,30 @@ struct JournalView: View {
     
     @State private var searchText = ""
     
+    var userEntries: [JournalEntry] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return entries.filter { $0.ownerUsername == nil }
+        }
+        return entries.filter { $0.ownerUsername == currentUsername }
+    }
+    
+    private func claimUnownedEntriesIfNeeded() {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else { return }
+        for entry in entries where entry.ownerUsername == nil {
+            entry.ownerUsername = currentUsername
+        }
+    }
+    
     var filteredEntries: [JournalEntry] {
         if searchText.isEmpty {
-            return entries
+            return userEntries
         } else {
-            return entries.filter { $0.title.localizedCaseInsensitiveContains(searchText) || $0.content.localizedCaseInsensitiveContains(searchText) }
+            return userEntries.filter {
+                $0.title.localizedCaseInsensitiveContains(searchText) ||
+                $0.content.localizedCaseInsensitiveContains(searchText) ||
+                $0.tags.contains(where: { $0.localizedCaseInsensitiveContains(searchText) }) ||
+                ($0.gitHubRepoName?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
         }
     }
     
@@ -147,6 +166,14 @@ struct JournalView: View {
                         }
                     }
                     .padding(.bottom, 100)
+                }
+            }
+            .task {
+                claimUnownedEntriesIfNeeded()
+            }
+            .onChange(of: appState.currentUser?.username) { _, newUsername in
+                if newUsername != nil {
+                    claimUnownedEntriesIfNeeded()
                 }
             }
         }

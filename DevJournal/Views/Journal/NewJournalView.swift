@@ -9,6 +9,7 @@ import SwiftData
 struct NewJournalView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
     
     @State private var title: String = ""
     @State private var content: String = ""
@@ -206,6 +207,7 @@ struct NewJournalView: View {
             hoursSpent: hoursSpent,
             tags: tagArray,
             gitHubRepoName: selectedRepo.isEmpty ? nil : selectedRepo,
+            ownerUsername: appState.currentUser?.username,
             isSyncedWithSupabase: false   // SyncEngine will handle push
         )
         

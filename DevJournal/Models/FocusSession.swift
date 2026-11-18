@@ -14,6 +14,7 @@ final class FocusSession {
     var durationMinutes: Int
     var notes: String
     var isCompleted: Bool
+    var ownerUsername: String?
     
     init(
         id: UUID = UUID(),
@@ -21,7 +22,8 @@ final class FocusSession {
         endTime: Date? = nil,
         durationMinutes: Int = 25,
         notes: String = "",
-        isCompleted: Bool = false
+        isCompleted: Bool = false,
+        ownerUsername: String? = nil
     ) {
         self.id = id
         self.startTime = startTime
@@ -29,6 +31,7 @@ final class FocusSession {
         self.durationMinutes = durationMinutes
         self.notes = notes
         self.isCompleted = isCompleted
+        self.ownerUsername = ownerUsername
     }
 }
 

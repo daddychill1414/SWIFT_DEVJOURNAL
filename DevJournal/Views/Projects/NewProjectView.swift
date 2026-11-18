@@ -9,6 +9,7 @@ import SwiftData
 struct NewProjectView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
     
     @State private var name: String = ""
     @State private var projectDescription: String = ""
@@ -142,6 +143,7 @@ struct NewProjectView: View {
             prsCount: 0,
             issuesCount: 0,
             starsCount: 0,
+            ownerUsername: appState.currentUser?.username,
             isSyncedWithSupabase: false   // SyncEngine will handle push
         )
         

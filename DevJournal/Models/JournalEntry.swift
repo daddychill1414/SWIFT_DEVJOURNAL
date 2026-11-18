@@ -18,6 +18,7 @@ final class JournalEntry {
     var tags: [String]
     var projectId: UUID?
     var gitHubRepoName: String?
+    var ownerUsername: String?
     var isSyncedWithSupabase: Bool
     
     init(
@@ -31,6 +32,7 @@ final class JournalEntry {
         tags: [String] = [],
         projectId: UUID? = nil,
         gitHubRepoName: String? = nil,
+        ownerUsername: String? = nil,
         isSyncedWithSupabase: Bool = false
     ) {
         self.id = id
@@ -43,6 +45,7 @@ final class JournalEntry {
         self.tags = tags
         self.projectId = projectId
         self.gitHubRepoName = gitHubRepoName
+        self.ownerUsername = ownerUsername
         self.isSyncedWithSupabase = isSyncedWithSupabase
     }
 }

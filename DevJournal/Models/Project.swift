@@ -20,6 +20,7 @@ final class Project {
     var issuesCount: Int
     var starsCount: Int
     var updatedAt: Date
+    var ownerUsername: String?
     var isSyncedWithSupabase: Bool
     
     init(
@@ -35,6 +36,7 @@ final class Project {
         issuesCount: Int = 0,
         starsCount: Int = 0,
         updatedAt: Date = Date(),
+        ownerUsername: String? = nil,
         isSyncedWithSupabase: Bool = false
     ) {
         self.id = id
@@ -49,6 +51,7 @@ final class Project {
         self.issuesCount = issuesCount
         self.starsCount = starsCount
         self.updatedAt = updatedAt
+        self.ownerUsername = ownerUsername
         self.isSyncedWithSupabase = isSyncedWithSupabase
     }
 }

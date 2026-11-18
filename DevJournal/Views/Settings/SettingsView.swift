@@ -13,6 +13,13 @@ struct SettingsView: View {
     @StateObject private var gitHubAuth = GitHubAuthService.shared
     @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
     
+    private var userJournalEntries: [JournalEntry] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return journalEntries.filter { $0.ownerUsername == nil }
+        }
+        return journalEntries.filter { $0.ownerUsername == currentUsername }
+    }
+    
     // GitHub Authenticated User Metrics
     @State private var followersCount: Int? = nil
     @State private var publicReposCount: Int? = nil
@@ -229,7 +236,11 @@ struct SettingsView: View {
                                                 withAnimation(.spring()) {
                                                     appState.currentUser = nil
                                                     appState.isGitHubConnected = false
+                                                    appState.isAuthenticated = false
                                                 }
+                                                followersCount = nil
+                                                publicReposCount = nil
+                                                followingCount = nil
                                             }
                                             .font(.caption)
                                             .fontWeight(.bold)
@@ -375,13 +386,13 @@ struct SettingsView: View {
                             GlassCard(style: .thin) {
                                 VStack(spacing: 14) {
                                     Button {
-                                        ExportService.shareMarkdown(entries: journalEntries)
+                                        ExportService.shareMarkdown(entries: userJournalEntries)
                                     } label: {
                                         HStack {
                                             Label("Export as Markdown", systemImage: "doc.text")
                                                 .foregroundColor(.primary)
                                             Spacer()
-                                            Text("\(journalEntries.count) entries")
+                                            Text("\(userJournalEntries.count) entries")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                         }
@@ -390,7 +401,7 @@ struct SettingsView: View {
                                     Divider()
                                     
                                     Button {
-                                        ExportService.sharePDF(entries: journalEntries)
+                                        ExportService.sharePDF(entries: userJournalEntries)
                                     } label: {
                                         HStack {
                                             Label("Export as PDF", systemImage: "doc.richtext")
@@ -442,6 +453,9 @@ struct SettingsView: View {
                                     appState.isAuthenticated = false
                                     appState.selectedTab = .home
                                 }
+                                followersCount = nil
+                                publicReposCount = nil
+                                followingCount = nil
                             } label: {
                                 HStack {
                                     Image(systemName: "rectangle.portrait.and.arrow.right")

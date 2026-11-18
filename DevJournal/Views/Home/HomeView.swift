@@ -13,6 +13,30 @@ struct HomeView: View {
     @Query(sort: \JournalEntry.date, order: .reverse) private var recentEntries: [JournalEntry]
     @Query(sort: \FocusSession.startTime, order: .reverse) private var focusSessions: [FocusSession]
     
+    private var userRecentEntries: [JournalEntry] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return recentEntries.filter { $0.ownerUsername == nil }
+        }
+        return recentEntries.filter { $0.ownerUsername == currentUsername }
+    }
+    
+    private var userFocusSessions: [FocusSession] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return focusSessions.filter { $0.ownerUsername == nil }
+        }
+        return focusSessions.filter { $0.ownerUsername == currentUsername }
+    }
+    
+    private func claimUnownedDataIfNeeded() {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else { return }
+        for entry in recentEntries where entry.ownerUsername == nil {
+            entry.ownerUsername = currentUsername
+        }
+        for session in focusSessions where session.ownerUsername == nil {
+            session.ownerUsername = currentUsername
+        }
+    }
+    
     @State private var viewModel = HomeViewModel()
     
     private var isProfileLoading: Bool {
@@ -407,8 +431,9 @@ struct HomeView: View {
                         }
                     }
                 }
+                claimUnownedDataIfNeeded()
                 await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
-                viewModel.computeTodayProgress(entries: recentEntries, sessions: focusSessions)
+                viewModel.computeTodayProgress(entries: userRecentEntries, sessions: userFocusSessions)
             }
             .refreshable {
                 if let profile = try? await GitHubService.shared.fetchUserProfile() {
@@ -417,8 +442,9 @@ struct HomeView: View {
                         appState.isGitHubConnected = true
                     }
                 }
+                claimUnownedDataIfNeeded()
                 await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
-                viewModel.computeTodayProgress(entries: recentEntries, sessions: focusSessions)
+                viewModel.computeTodayProgress(entries: userRecentEntries, sessions: userFocusSessions)
             }
             .sheet(isPresented: Bindable(appState).isGitHubConnectSheetPresented) {
                 GitHubConnectSheet()
@@ -432,13 +458,20 @@ struct HomeView: View {
                                     appState.currentUser = profile
                                     appState.isGitHubConnected = true
                                 }
+                                claimUnownedDataIfNeeded()
                             }
                         }
                         await viewModel.fetchRecentActivities(username: appState.currentUser?.username)
                     }
+                } else {
+                    viewModel.gitHubActivities = []
+                    viewModel.selectedRepoFilter = nil
+                    viewModel.computeTodayProgress(entries: userRecentEntries, sessions: userFocusSessions)
                 }
             }
             .onChange(of: appState.currentUser?.username) { _, newUsername in
+                claimUnownedDataIfNeeded()
+                viewModel.computeTodayProgress(entries: userRecentEntries, sessions: userFocusSessions)
                 if let username = newUsername {
                     Task {
                         await viewModel.fetchRecentActivities(username: username)

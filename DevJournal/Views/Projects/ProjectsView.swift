@@ -53,11 +53,25 @@ struct ProjectsView: View {
     }
     
     // Filtered Local Projects
+    var userProjects: [Project] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return projects.filter { $0.ownerUsername == nil }
+        }
+        return projects.filter { $0.ownerUsername == currentUsername }
+    }
+    
     var filteredProjects: [Project] {
-        projects.filter { project in
+        userProjects.filter { project in
             let matchesSearch = searchText.isEmpty || project.name.localizedCaseInsensitiveContains(searchText)
             if selectedProjectFilter == "All" { return matchesSearch }
             return matchesSearch && project.status.capitalized == selectedProjectFilter
+        }
+    }
+    
+    private func claimUnownedProjectsIfNeeded() {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else { return }
+        for project in projects where project.ownerUsername == nil {
+            project.ownerUsername = currentUsername
         }
     }
     
@@ -117,7 +131,7 @@ struct ProjectsView: View {
                             sectionTabButton(
                                 tab: .localProjects,
                                 title: "Work Projects",
-                                count: projects.isEmpty ? nil : projects.count,
+                                count: userProjects.isEmpty ? nil : userProjects.count,
                                 icon: "hammer.fill"
                             )
                         }
@@ -187,13 +201,29 @@ struct ProjectsView: View {
                 }
             }
             .task {
+                claimUnownedProjectsIfNeeded()
                 if gitHubRepos.isEmpty && gitHubAuth.isAuthenticated {
                     await loadRepositories()
                 }
             }
             .refreshable {
+                claimUnownedProjectsIfNeeded()
                 if selectedSection == .repositories {
                     await loadRepositories()
+                }
+            }
+            .onChange(of: gitHubAuth.isAuthenticated) { _, isAuthed in
+                if isAuthed {
+                    Task {
+                        await loadRepositories()
+                    }
+                } else {
+                    gitHubRepos = []
+                }
+            }
+            .onChange(of: appState.currentUser?.username) { _, newUsername in
+                if newUsername != nil {
+                    claimUnownedProjectsIfNeeded()
                 }
             }
         }

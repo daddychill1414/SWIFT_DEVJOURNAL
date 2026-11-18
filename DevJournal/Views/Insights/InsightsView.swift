@@ -48,6 +48,20 @@ struct InsightsView: View {
     @Query(sort: \FocusSession.startTime, order: .reverse) private var focusSessions: [FocusSession]
     @Query(sort: \GitHubActivityItem.timestamp, order: .reverse) private var storedActivities: [GitHubActivityItem]
     
+    private var userJournalEntries: [JournalEntry] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return journalEntries.filter { $0.ownerUsername == nil }
+        }
+        return journalEntries.filter { $0.ownerUsername == currentUsername }
+    }
+    
+    private var userFocusSessions: [FocusSession] {
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return focusSessions.filter { $0.ownerUsername == nil }
+        }
+        return focusSessions.filter { $0.ownerUsername == currentUsername }
+    }
+    
     enum InsightsSection: String, CaseIterable {
         case all = "Overview"
         case git = "Git Activity"
@@ -70,7 +84,13 @@ struct InsightsView: View {
     @State private var gitHubError: String? = nil
     
     private var allActivities: [GitHubActivityItem] {
-        !fetchedActivities.isEmpty ? fetchedActivities : storedActivities
+        if !fetchedActivities.isEmpty {
+            return fetchedActivities
+        }
+        guard let currentUsername = appState.currentUser?.username, !currentUsername.isEmpty else {
+            return []
+        }
+        return storedActivities.filter { $0.author.isEmpty || $0.author.lowercased() == currentUsername.lowercased() }
     }
     
     // MARK: - Daily Commits (Last 30 Days)
@@ -304,8 +324,8 @@ struct InsightsView: View {
                       let interval = calendar.dateInterval(of: .month, for: monthDate) else {
                     return FocusTimeData(day: "", hours: 0)
                 }
-                let monthEntries = journalEntries.filter { $0.date >= interval.start && $0.date < interval.end }
-                let monthFocus  = focusSessions.filter  { $0.startTime >= interval.start && $0.startTime < interval.end && $0.isCompleted }
+                let monthEntries = userJournalEntries.filter { $0.date >= interval.start && $0.date < interval.end }
+                let monthFocus  = userFocusSessions.filter  { $0.startTime >= interval.start && $0.startTime < interval.end && $0.isCompleted }
                 let totalHours = monthEntries.reduce(0.0) { $0 + $1.hoursSpent }
                     + Double(monthFocus.reduce(0) { $0 + $1.durationMinutes }) / 60.0
                 return FocusTimeData(day: dayFormatter.string(from: monthDate), hours: totalHours)
@@ -317,8 +337,8 @@ struct InsightsView: View {
                 guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else {
                     return FocusTimeData(day: "", hours: 0)
                 }
-                let dayEntries = journalEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
-                let dayFocus   = focusSessions.filter  { calendar.isDate($0.startTime, inSameDayAs: date) && $0.isCompleted }
+                let dayEntries = userJournalEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
+                let dayFocus   = userFocusSessions.filter  { calendar.isDate($0.startTime, inSameDayAs: date) && $0.isCompleted }
                 let totalHours = dayEntries.reduce(0.0) { $0 + $1.hoursSpent }
                     + Double(dayFocus.reduce(0) { $0 + $1.durationMinutes }) / 60.0
                 return FocusTimeData(day: dayFormatter.string(from: date), hours: totalHours)
@@ -336,7 +356,7 @@ struct InsightsView: View {
     }
     
     private var longestFocusMinutes: Int {
-        focusSessions.filter { $0.isCompleted }.map { $0.durationMinutes }.max() ?? 0
+        userFocusSessions.filter { $0.isCompleted }.map { $0.durationMinutes }.max() ?? 0
     }
     
     private var productivityScore: Int {
@@ -427,6 +447,23 @@ struct InsightsView: View {
             }
             .refreshable {
                 await loadGitHubData()
+            }
+            .onChange(of: gitHubAuth.isAuthenticated) { _, isAuthed in
+                if isAuthed {
+                    Task {
+                        await loadGitHubData()
+                    }
+                } else {
+                    fetchedActivities = []
+                    fetchedRepos = []
+                }
+            }
+            .onChange(of: appState.currentUser?.username) { _, newUsername in
+                if newUsername != nil {
+                    Task {
+                        await loadGitHubData()
+                    }
+                }
             }
         }
     }
