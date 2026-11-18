@@ -252,6 +252,27 @@ struct HomeView: View {
                                                 )
                                             }
                                         }
+                                        
+                                        // "All Repos" Navigation Chip
+                                        Button {
+                                            appState.selectedTab = .projects
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "folder.badge.gearshape")
+                                                    .font(.caption2)
+                                                Text("All Repos")
+                                                    .font(.subheadline)
+                                                    .fontWeight(.medium)
+                                                Image(systemName: "chevron.right")
+                                                    .font(.system(size: 9, weight: .bold))
+                                            }
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 7)
+                                            .background(Color.white.opacity(0.08))
+                                            .foregroundColor(AppColors.accentCyan)
+                                            .clipShape(Capsule())
+                                            .overlay(Capsule().stroke(AppColors.accentCyan.opacity(0.35), lineWidth: 1))
+                                        }
                                     }
                                     .padding(.vertical, 2)
                                 }

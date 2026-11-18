@@ -168,7 +168,7 @@ final class GitHubService: GitHubServiceProtocol {
     // MARK: - Repositories
     
     func fetchRepositories() async throws -> [GitHubRepository] {
-        return try await fetchPaginated(path: "/user/repos?sort=updated", perPage: 30)
+        return try await fetchPaginated(path: "/user/repos?sort=updated&affiliation=owner,collaborator", perPage: 100)
     }
     
     // MARK: - Commits (paginated)

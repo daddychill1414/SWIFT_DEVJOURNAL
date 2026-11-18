@@ -120,12 +120,17 @@ struct SettingsView: View {
                                                 color: AppColors.secondaryPurple
                                             )
                                             
-                                            userMetricItem(
-                                                title: "Public Repos",
-                                                value: publicReposCount.map { "\($0)" } ?? "—",
-                                                icon: "folder.fill",
-                                                color: AppColors.primaryIndigo
-                                            )
+                                            Button {
+                                                appState.selectedTab = .projects
+                                            } label: {
+                                                userMetricItem(
+                                                    title: "Public Repos",
+                                                    value: publicReposCount.map { "\($0)" } ?? "—",
+                                                    icon: "folder.fill",
+                                                    color: AppColors.primaryIndigo
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
                                         }
                                     }
                                 }
