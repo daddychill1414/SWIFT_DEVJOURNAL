@@ -8,7 +8,9 @@
 - [x] GitHub OAuth login flow (ASWebAuthenticationSession)
 - [x] Real GitHub profile fetch (`/user` endpoint)
 - [x] Real GitHub activity feed (`/users/{username}/events`)
-- [x] Repository fetch (`/user/repos`)
+- [x] Repository fetch (`/user/repos` up to 100 repos)
+- [x] Dedicated GitHub Repositories view with search, filters (Public/Private/Starred), and activity tracking
+- [x] Direct "All Repos" navigation chip on Home screen
 - [x] Fixed HTTP/3 QUIC bug (simulator timeout)
 - [x] Fixed CodingKeys + convertFromSnakeCase conflict
 - [x] Fixed ARC deallocation of auth session
