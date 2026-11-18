@@ -624,8 +624,10 @@ struct GitHubConnectSheet: View {
                 }
                 
                 GlassButton(action: {
-                    GitHubAuthService.shared.startOAuthFlow(appState: appState)
                     dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        GitHubAuthService.shared.startOAuthFlow(appState: appState)
+                    }
                 }) {
                     HStack {
                         Image(systemName: "lock.shield.fill")

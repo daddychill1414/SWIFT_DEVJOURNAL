@@ -35,11 +35,13 @@ enum AppConfiguration {
     }
     
     static var gitHubClientSecret: String {
-        guard let secret = ProcessInfo.processInfo.environment["GITHUB_CLIENT_SECRET"], !secret.isEmpty else {
-            print("⚠️ [Configuration] WARNING: GITHUB_CLIENT_SECRET environment variable is not set. Set it via Xcode Scheme -> Edit Scheme -> Run -> Environment Variables.")
-            return ""
+        if let secret = ProcessInfo.processInfo.environment["GITHUB_CLIENT_SECRET"], !secret.isEmpty {
+            return secret
         }
-        return secret
+        if let plistSecret = Bundle.main.infoDictionary?["GITHUB_CLIENT_SECRET"] as? String, !plistSecret.isEmpty {
+            return plistSecret
+        }
+        return "d58b1daccf7516ad46e6d253b662bc31aeb907d6"
     }
 }
 

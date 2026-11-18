@@ -20,6 +20,7 @@ final class GitHubAuthService: NSObject, ObservableObject, ASWebAuthenticationPr
     @Published var authError: String?
     
     private var authSession: ASWebAuthenticationSession?
+    private var lastExchangedCode: String?
     
     override private init() {
         super.init()
@@ -92,6 +93,12 @@ final class GitHubAuthService: NSObject, ObservableObject, ASWebAuthenticationPr
             self.authError = "Failed to retrieve authorization code from callback URL."
             return
         }
+        
+        guard code != lastExchangedCode else {
+            print("GitHubAuthService: Authorization code already processed.")
+            return
+        }
+        lastExchangedCode = code
         
         exchangeCodeForToken(code: code, appState: appState)
     }
@@ -194,6 +201,7 @@ final class GitHubAuthService: NSObject, ObservableObject, ASWebAuthenticationPr
     func signOut() {
         _ = KeychainService.shared.delete(key: "github_access_token")
         self.isAuthenticated = false
+        self.lastExchangedCode = nil
         GitHubService.shared.clearCachedProfile()
     }
 }

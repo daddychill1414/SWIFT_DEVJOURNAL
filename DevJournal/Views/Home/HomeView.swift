@@ -273,6 +273,7 @@ struct HomeView: View {
                                             .foregroundColor(.secondary)
                                         
                                         let emptyMsg: String = {
+                                            if let authErr = gitHubAuth.authError { return authErr }
                                             if let err = viewModel.errorMessage { return err }
                                             if !gitHubAuth.isAuthenticated { return "Not authenticated with GitHub. Please connect your account in Settings." }
                                             if let filter = viewModel.selectedRepoFilter {
