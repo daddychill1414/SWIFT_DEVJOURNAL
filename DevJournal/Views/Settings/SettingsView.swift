@@ -108,7 +108,7 @@ struct SettingsView: View {
                                         HStack(spacing: 10) {
                                             userMetricItem(
                                                 title: "Username",
-                                                value: appState.currentUser?.username.map { "@\($0)" } ?? "@user",
+                                                value: appState.currentUser.map { "@\($0.username)" } ?? "@user",
                                                 icon: "at",
                                                 color: AppColors.accentCyan
                                             )
